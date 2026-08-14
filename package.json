@@ -1,0 +1,17 @@
+{
+  "name": "hear-with-me",
+  "version": "0.4.0",
+  "description": "Hear With Me — live-share whatever audio is playing on your desktop with anyone, on any device. No accounts, no app store, no runtime dependencies.",
+  "main": "server.js",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=16" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test-rooms.js && node test-qr.js",
+    "test:e2e": "node test-e2e.js",
+    "assets": "node tools/make-assets.mjs"
+  },
+  "dependencies": {}
+}

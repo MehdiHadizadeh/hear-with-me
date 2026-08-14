@@ -1,0 +1,1022 @@
+/* =====================================================================
+   Hear With Me — visual system
+   ---------------------------------------------------------------------
+   THESIS: a room you can *see* hearing. The page is an instrument panel
+   for one live signal shared between two people, not a marketing hero
+   with three feature cards under it.
+   OWN-WORLD: deep ink ground, hairline panels with no shadow, and two
+   named voices — aqua (#3FE0BE, the signal) and violet (#8C7CFF, the
+   second listener) — the same two strands as the mark. They reappear as
+   the meter, the state ring, and the live pill. Vazirmatn throughout.
+   STORY: a wave is already moving before you read anything; you learn
+   the audio never touches the server; you press one button.
+   FIRST VIEWPORT: wave field behind a two-line Persian headline, the
+   aqua action directly beneath it, the privacy sentence beneath that,
+   join-by-code as the quiet second door. No scrolling required.
+   FORM: patch bay at night — flat panels, hairlines, one lit signal.
+   ===================================================================== */
+
+/* Self-hosted so a blocked or slow CDN can never hold the page hostage;
+   local() first so anyone who already has Vazirmatn downloads nothing. */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: local('Vazirmatn'),
+       url('/fonts/Vazirmatn.woff2') format('woff2-variations'),
+       url('/fonts/Vazirmatn.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ground */
+  --ink: #070910;
+  --ink-2: #0B0E18;
+  --panel: #10141F;
+  --panel-2: #161B29;
+  --line: #212739;
+  --line-soft: #191E2D;
+
+  /* type */
+  --text: #E9ECF5;
+  --muted: #9BA5C0;   /* 8.1:1 on --ink, 7.5:1 on --panel */
+  --faint: #7A849E;   /* 5.3:1 on --ink, 4.9:1 on --panel — small print only */
+
+  /* the two voices */
+  --signal: #3FE0BE;       /* 12.0:1 on --ink */
+  --signal-deep: #16A98B;
+  --signal-ink: #04140F;   /* 11.4:1 on --signal */
+  --voice-2: #8C7CFF;      /* 6.1:1 on --ink */
+
+  /* state colours: separated by hue *and* lightness, never colour alone */
+  --st-live: #3FE0BE;
+  --st-wait: #F2B441;
+  --st-connect: #8C7CFF;
+  --st-idle: #7C89A6;
+  --st-alert: #FF7C88;
+
+  --st: var(--st-idle); /* whatever the current state sets */
+
+  --r-panel: 16px;
+  --r-control: 12px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  /* The wave field is deliberately wider than the viewport. Clipping here
+     (rather than on body alone) is what stops it adding a horizontal scroll
+     and shoving the RTL column sideways. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--ink);
+  color: var(--text);
+  font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+h1, h2, h3, p { margin: 0; }
+a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Latin runs (room codes, "Chrome", track names) inside Persian prose. */
+.ltr { direction: ltr; unicode-bidi: isolate; }
+
+/* ---------------------------------------------------------------- shell */
+
+.shell {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  padding: 20px 18px 40px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+/* The landing page gets a little more room than the room page — the host,
+   the only person who can share audio, is always on a desktop — but not so
+   much that a single column of text has to stretch across it. */
+.shell--hero { max-width: 720px; }
+
+/* ----------------------------------------------------------- brand lockup */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.brand svg { width: 34px; height: 34px; flex: none; }
+/* The wordmark is a three-word sentence, not a coined word: it needs to sit
+   quieter than a short brand would, and on the room page it shares the header
+   with the code plate. */
+.brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  direction: ltr;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ hero */
+
+.hero {
+  position: relative;
+  padding: 34px 0 8px;
+}
+
+/* The wave field is the product's own material, not an ornament: the same
+   two strands as the mark, moving at the pace of a slow track. */
+.wavefield {
+  position: absolute;
+  inset: -60px -50vw auto;
+  height: 300px;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
+}
+.wavefield svg { display: block; width: 200%; height: 100%; }
+.wavefield path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.wavefield .w1 { stroke: var(--signal); opacity: .30; }
+.wavefield .w2 { stroke: var(--voice-2); opacity: .26; }
+.wavefield g {
+  animation: drift 26s linear infinite;
+  transform-origin: 0 0;
+}
+.wavefield .lag { animation-duration: 34s; }
+/* In user units, not a percentage: `-50%` resolves against the path's own
+   bounding box, which slid the wave clean off the right half of the field
+   before snapping back. 800 is two wavelengths of the path above. */
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(-800px); } }
+
+.hero-title {
+  position: relative;
+  font-size: clamp(29px, 7.4vw, 44px);
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  margin-bottom: 14px;
+}
+.hero-title em {
+  font-style: normal;
+  color: var(--signal);
+}
+.hero-lead {
+  position: relative;
+  color: var(--muted);
+  font-size: 16px;
+  max-width: 46ch;
+  margin-bottom: 26px;
+}
+
+/* The landing page used to carry a mock room panel with a CSS-animated meter.
+   It was the only dishonest signal in a product whose entire claim is that the
+   meter reads the real audio — so there is nothing here now but the headline,
+   the action, and the door for people who already have a code. */
+.hero-grid { position: relative; }
+.below { max-width: 560px; margin-inline: auto; }
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  padding: 14px 20px;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color .18s var(--ease), border-color .18s var(--ease),
+              color .18s var(--ease), transform .08s var(--ease), opacity .18s;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--signal);
+  color: var(--signal-ink);
+  width: 100%;
+  font-size: 17px;
+  box-shadow: 0 10px 26px -14px rgba(63, 224, 190, .75);
+}
+.btn-primary:hover:not(:disabled) { background: #58E9C9; }
+
+.btn-secondary {
+  background: var(--panel-2);
+  color: var(--text);
+  border-color: var(--line);
+}
+.btn-secondary:hover { background: #1D2436; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+}
+.btn-ghost:hover { color: var(--text); border-color: #2E3650; }
+
+/* An <a> that has to look like the primary action. */
+.btn-link { text-decoration: none; }
+
+/* ------------------------------------------------------------ trust line */
+
+.trust {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin-top: 14px;
+}
+.trust svg { flex: none; width: 17px; height: 17px; margin-top: 3px; color: var(--signal); }
+.trust b { color: var(--text); font-weight: 600; }
+
+/* --------------------------------------------------------------- panels */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-panel);
+  padding: 20px;
+}
+.panel + .panel { margin-top: 14px; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--faint);
+  font-size: 12.5px;
+  margin: 26px 0 16px;
+}
+.divider::before, .divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--line-soft);
+}
+
+/* ---------------------------------------------------------------- inputs */
+
+.field-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+input[type="text"] {
+  width: 100%;
+  font: inherit;
+  padding: 13px 15px;
+  min-height: 52px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  color: var(--text);
+  transition: border-color .18s var(--ease), background-color .18s var(--ease);
+}
+input[type="text"]:focus { border-color: var(--signal); background: #0D111C; }
+/* Placeholders are read, so they meet the same 4.5:1 floor as body text. */
+input::placeholder { color: var(--faint); opacity: 1; }
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+.row > input { flex: 1; min-width: 0; }
+.row > .btn { flex: none; }
+
+/* Room codes are read aloud and typed in — treat them as a plate, not prose. */
+.code-input {
+  direction: ltr;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+/* A field that refused what you typed has to say so where you typed it. */
+.field-error {
+  display: none;
+  color: #FFC2C8;
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.field-error.show { display: block; animation: rise .28s var(--ease); }
+
+.note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.note-strong { color: var(--text); font-weight: 600; }
+
+.footer-note {
+  margin-top: auto;
+  padding-top: 34px;
+  color: var(--faint);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ============================================================ room page */
+
+.room-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* The code is the thing people read out over the phone — give it the weight
+   of a ticket stub rather than burying it in a sentence. */
+.code-plate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  padding-inline-start: 14px;
+}
+.code-plate .label { font-size: 11.5px; color: var(--faint); }
+.room-code {
+  direction: ltr;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  line-height: 1;
+}
+.icon-btn {
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 9px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: color .18s var(--ease), background-color .18s var(--ease), border-color .18s;
+}
+.icon-btn:hover { color: var(--text); }
+.icon-btn.done { color: var(--signal); border-color: rgba(63,224,190,.4); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.share-row { margin-bottom: 14px; display: flex; gap: 10px; }
+.share-row #shareBtn { flex: 1; }
+.share-row #qrBtn { flex: none; }
+
+/* ------------------------------------------------------------------- QR */
+
+/* The host is on a desktop and the guest is holding a camera, so the code is
+   shown at a size a phone can actually lock onto from across a room. */
+.qr-panel {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-panel);
+  padding: 18px;
+  margin-bottom: 14px;
+  text-align: center;
+  animation: rise .3s var(--ease);
+}
+.qr-panel[hidden] { display: none; }
+.qr-code {
+  width: min(232px, 62vw);
+  margin: 0 auto 12px;
+  background: var(--text);
+  border-radius: 10px;
+  padding: 8px;
+}
+.qr-code svg { display: block; width: 100%; height: auto; }
+
+/* ------------------------------------------------------- host tool shelf */
+
+/* Controls that belong to the room rather than to the moment: quality, the
+   door, and who is behind it. Quiet by default — they sit under the action. */
+.tools {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 12px;
+}
+.tool-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+/* The name field shares this row with its label and must not push it out. */
+.tool-row input[type="text"] { flex: 1; min-width: 0; max-width: 60%; }
+.tool-label { font-size: 12.5px; color: var(--muted); }
+.tool-hint { font-size: 12px; color: var(--faint); margin-top: -6px; }
+
+.select {
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 9px 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  cursor: pointer;
+  min-height: 32px;
+}
+.toggle input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--signal);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------- members */
+
+.members { margin-top: 2px; }
+.member-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.member-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+.member-name { flex: 1; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.member-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* When nobody typed a name, arrival order is the only thing telling two
+   guests apart — so it is always on the row, not a tooltip. */
+.member-when { font-size: 11.5px; color: var(--faint); flex: none; }
+.member-tag {
+  font-size: 11px;
+  color: var(--st-wait);
+  border: 1px solid color-mix(in srgb, var(--st-wait) 35%, transparent);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.link-btn {
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  padding: 7px 11px;
+  min-height: 34px;
+  transition: color .18s var(--ease), border-color .18s var(--ease);
+}
+.link-btn:hover { color: var(--text); border-color: #2E3650; }
+.link-btn.danger:hover { color: var(--st-alert); border-color: rgba(255,124,136,.4); }
+
+/* ------------------------------------------------------------- reactions */
+
+/* The listener cannot talk back over the audio path — it is one-way by
+   design — so this row is the whole of their voice. */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.reaction {
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  padding: 10px 15px;
+  min-height: 46px;
+  transition: color .18s var(--ease), border-color .18s var(--ease), transform .12s var(--ease);
+}
+.reaction:hover { color: var(--text); }
+.reaction:active { transform: translateY(1px); }
+.reaction.sent { color: var(--signal); border-color: rgba(63,224,190,.45); }
+/* A tap that arrived inside the cooldown. Without this the button simply did
+   nothing and read as broken. */
+.reaction.cooling { opacity: .45; }
+
+/* ---------------------------------------------------------------- toasts */
+
+/* A cheer needs no reply, so it behaves like applause: it rises over the
+   stage and is gone. Nothing to dismiss, nothing to read twice. */
+.burst {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 12px;
+  height: 0;
+  pointer-events: none;
+  text-align: center;
+}
+.burst span {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 0;
+  font-size: 26px;
+  line-height: 1;
+  animation: cheer 2.4s var(--ease) forwards;
+}
+@keyframes cheer {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(.6); }
+  18% { opacity: 1; transform: translate(calc(-50% + var(--x, 0px) * .35), -22px) scale(1.15); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x, 0px)), -108px) scale(.9); }
+}
+
+/* Everything else is a report the host has to act on, so it says who, what,
+   and — only on the host's screen — what to do about it. */
+/* Fixed to the viewport, not parked in the page. In the flow these sat above
+   the cards, so a host who had scrolled down to the guest list — exactly the
+   host who needs to hear "I can't hear anything" — got the message delivered
+   off-screen and expired before they scrolled back. */
+.toasts {
+  position: fixed;
+  z-index: 40;
+  inset-inline: 0;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding-inline: 14px;
+  pointer-events: none;
+}
+.toasts:empty { display: none; }
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-inline-start: 2px solid var(--signal);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  /* The only shadow besides the primary button's: this one floats above the
+     page and has to read as a layer, not as another panel. */
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .9);
+  animation: toast-in .3s var(--ease);
+  transition: opacity .4s var(--ease), transform .4s var(--ease);
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } }
+.toast-emoji { font-size: 17px; line-height: 1.35; flex: none; }
+.toast-body { min-width: 0; }
+.toast-body b { color: var(--text); font-weight: 700; }
+.toast-todo {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.toast-alert {
+  border-inline-start-color: var(--st-alert);
+  background: rgba(255, 124, 136, .07);
+}
+.toast-alert .toast-body b { color: #FFC2C8; }
+.toast.leaving { opacity: 0; transform: translateY(8px); }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.pill .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--st-idle);
+  flex: none;
+  transition: background-color .3s var(--ease);
+}
+.pill.live { color: var(--text); border-color: rgba(63,224,190,.28); }
+.pill.live .dot {
+  background: var(--st-live);
+  animation: beat 2.4s ease-in-out infinite;
+}
+/* Connection quality reads as a third state, not as an error: same chip, a
+   different lamp. Colour and wording always move together. */
+.pill.warn { color: var(--text); border-color: color-mix(in srgb, var(--st-wait) 30%, transparent); }
+.pill.warn .dot { background: var(--st-wait); }
+.pill.bad { color: var(--text); border-color: color-mix(in srgb, var(--st-alert) 32%, transparent); }
+.pill.bad .dot { background: var(--st-alert); }
+@keyframes beat {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(63,224,190,.5); }
+  60% { box-shadow: 0 0 0 6px rgba(63,224,190,0); }
+}
+
+/* ------------------------------------------------------------ the stage */
+
+/* Every connection state changes colour, glyph and motion together — the
+   text alone was never enough to tell "waiting" from "reconnecting". */
+.stage {
+  --st: var(--st-idle);
+  position: relative;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-panel);
+  background:
+    radial-gradient(130% 90% at 50% 0%, color-mix(in srgb, var(--st) 9%, transparent), transparent 62%),
+    var(--panel);
+  padding: 24px 20px 20px;
+  text-align: center;
+  transition: border-color .4s var(--ease), background .4s var(--ease);
+}
+.stage[data-state="waiting"] { --st: var(--st-wait); }
+.stage[data-state="connecting"] { --st: var(--st-connect); }
+.stage[data-state="live"] { --st: var(--st-live); border-color: rgba(63, 224, 190, .3); }
+.stage[data-state="stopped"] { --st: var(--st-idle); }
+.stage[data-state="dropped"], .stage[data-state="error"] { --st: var(--st-alert); }
+
+.stage-glyph {
+  height: 76px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+}
+.stage-glyph > * { grid-area: 1 / 1; }
+
+/* Each glyph fades in only for the states it belongs to. */
+.glyph { opacity: 0; transform: scale(.94); transition: opacity .32s var(--ease), transform .32s var(--ease); }
+.stage[data-state="waiting"] .glyph-wait,
+.stage[data-state="connecting"] .glyph-connect,
+.stage[data-state="stopped"] .glyph-flat,
+.stage[data-state="dropped"] .glyph-flat,
+.stage[data-state="error"] .glyph-alert,
+.stage[data-state="idle"] .glyph-idle { opacity: 1; transform: none; }
+
+/* waiting — a dashed ring turning slowly, nothing arriving yet */
+.glyph-wait {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 2px dashed color-mix(in srgb, var(--st) 55%, transparent);
+  animation: turn 14s linear infinite;
+}
+.glyph-wait::after {
+  content: '';
+  position: absolute;
+  inset: 21px;
+  border-radius: 50%;
+  background: var(--st);
+  opacity: .8;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+@keyframes turn { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%,100% { transform: scale(.62); opacity: .45; } 50% { transform: scale(1); opacity: .95; } }
+
+/* connecting — one arc closing the circle */
+.glyph-connect {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--st) 22%, transparent);
+  border-top-color: var(--st);
+  animation: turn 1s linear infinite;
+}
+
+/* stopped / dropped — the wave gone flat, with a probe still sweeping it */
+.glyph-flat {
+  width: 108px; height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--st) 60%, transparent);
+  position: relative;
+  direction: ltr;
+}
+.glyph-flat::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--st);
+  animation: sweep 3.2s var(--ease) infinite;
+}
+@keyframes sweep {
+  0% { transform: translateX(0); opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { transform: translateX(100px); opacity: 0; }
+}
+
+/* error — a stopped signal, not a generic warning triangle */
+.glyph-alert {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--st) 45%, transparent);
+  display: grid;
+  place-items: center;
+  color: var(--st);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* idle host — the mark at rest, waiting for a source */
+.glyph-idle { color: var(--st-idle); }
+.glyph-idle svg { width: 74px; height: 74px; display: block; }
+
+.stage-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+  text-wrap: balance;
+}
+.stage-sub {
+  color: var(--muted);
+  font-size: 13.5px;
+  min-height: 21px;
+  text-wrap: balance;
+}
+
+/* --------------------------------------------------------- level meter */
+
+/* Read straight off the audio's own spectrum, so a flat meter means no sound
+   is arriving — the one thing a "connected" label can never tell you. */
+.livebox { margin-top: 16px; }
+
+.meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 72px;
+  direction: ltr; /* the meter reads left-to-right whatever the page does */
+}
+/* Inside the stage the meter *is* the live-state glyph. */
+.stage-glyph .meter {
+  width: 100%;
+  height: 76px;
+  opacity: 0;
+  transition: opacity .32s var(--ease);
+}
+.stage[data-state="live"] .meter { opacity: 1; }
+.meter span {
+  flex: 1;
+  min-width: 2px;
+  max-width: 7px;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(to top, var(--signal), var(--voice-2));
+  transform: scaleY(0.04);
+  transform-origin: center; /* mirrored around the centre line */
+  will-change: transform;
+  transition: background-color .3s var(--ease);
+}
+.meter.idle span {
+  background: var(--panel-2);
+  transform: scaleY(0.04);
+}
+
+.live-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.elapsed {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  /* "۰:۰۶" is a clock reading, not prose: without isolating it the RTL
+     paragraph reorders the parts around the colon into ۰۶:۰. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.live-hint { font-size: 12px; color: var(--muted); text-align: start; }
+
+.now-playing {
+  background: var(--ink-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 12px 15px;
+  margin-top: 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  word-break: break-word;
+  text-align: start;
+}
+.now-playing .np-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--faint);
+  margin-bottom: 3px;
+}
+
+/* -------------------------------------------------------------- volume */
+
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+/* Nothing to turn down until something is playing. Written as "hide when not
+   live" on purpose: a browser without :has() keeps the control rather than
+   losing it. */
+#guestCard:has(.stage:not([data-state="live"])) .volume-row { display: none; }
+.volume-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  accent-color: var(--signal);
+  background: transparent;
+  cursor: pointer;
+}
+.mute-btn { width: 48px; height: 48px; border-radius: 12px; color: var(--text); }
+.mute-btn svg { width: 22px; height: 22px; }
+.mute-btn .wave-off { display: none; }
+.mute-btn[aria-pressed="true"] {
+  color: var(--st-alert);
+  border-color: rgba(255, 124, 136, .35);
+  background: rgba(255, 124, 136, .1);
+}
+.mute-btn[aria-pressed="true"] .wave-on { display: none; }
+.mute-btn[aria-pressed="true"] .wave-off { display: inline; }
+
+/* ------------------------------------------------------------- banners */
+
+.notice {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(140, 124, 255, .1);
+  border: 1px solid rgba(140, 124, 255, .32);
+  color: var(--text);
+  padding: 12px 15px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.notice.show { display: flex; animation: rise .32s var(--ease); }
+.notice-text { flex: 1; }
+/* Something that went wrong looks different from something that just changed. */
+.notice-alert {
+  background: rgba(255, 124, 136, .1);
+  border-color: rgba(255, 124, 136, .3);
+  color: #FFC2C8;
+}
+.notice-close {
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: .65;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  margin: -3px -5px 0 0;
+}
+.notice-close:hover { opacity: 1; }
+@keyframes rise { from { opacity: 0; transform: translateY(-6px); } }
+
+.enable-audio-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 9, 16, .93);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 24px;
+  text-align: center;
+}
+.enable-audio-overlay.hidden { display: none; }
+.enable-audio-overlay .inner { max-width: 320px; }
+.enable-audio-overlay p { color: var(--muted); margin: 16px 0 22px; }
+.enable-audio-overlay .btn { width: 100%; }
+
+/* --------------------------------------------------------- host detail */
+
+.host-brief {
+  text-align: start;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 20px 0 4px;
+}
+kbd {
+  font: inherit;
+  font-size: .93em;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 7px;
+  direction: ltr;
+  display: inline-block;
+}
+
+.stack { display: grid; gap: 10px; margin-top: 14px; }
+.stack .btn { width: 100%; }
+
+/* ------------------------------------------------------------ responsive */
+
+@media (min-width: 620px) {
+  .shell { padding: 28px 24px 48px; }
+  .hero { padding-top: 48px; }
+  .meter { height: 84px; gap: 4px; }
+  .stage { padding: 30px 26px 24px; }
+}
+
+@media (min-width: 900px) {
+  .hero { padding-top: 40px; }
+  /* One column, held to a readable measure and centred with everything below
+     it, rather than a wide headline floating over an empty half. */
+  .hero-grid { max-width: 620px; margin-inline: auto; text-align: center; }
+  .hero-lead { margin-inline: auto; }
+  .trust { text-align: start; max-width: 46ch; margin-inline: auto; }
+  .hero-title { font-size: 46px; }
+  .btn-primary { width: auto; min-width: 260px; }
+  .wavefield { height: 420px; inset: -80px -50vw auto; }
+}
+
+/* Guests are overwhelmingly on a phone: nothing under 46px, no zooming. The
+   wordmark gives way to the mark alone here — the room code is what the header
+   is actually for. */
+@media (max-width: 380px) {
+  .brand-name { font-size: 16px; }
+  .room-code { font-size: 17px; letter-spacing: .12em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

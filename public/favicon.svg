@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Favicon cut: dark tile so the mark holds on light browser chrome, and a
+       shallower, heavier wave so both strands survive at 16px. -->
+  <rect width="48" height="48" rx="11" fill="#0C0F18"/>
+  <g fill="none" stroke-width="5.4" stroke-linecap="round">
+    <path d="M9 21C13.7 12.5 18.3 12.5 23 21C27.7 29.5 32.3 29.5 37 21" stroke="#3FE0BE"/>
+    <path d="M9 30C13.7 21.5 18.3 21.5 23 30C27.7 38.5 32.3 38.5 37 30" stroke="#8C7CFF"/>
+  </g>
+</svg>

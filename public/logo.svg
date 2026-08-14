@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="nv-t">
+  <title id="nv-t">Hear With Me</title>
+  <!-- Two voices on one wave: the same curve traced twice, locked in step.
+       Not a headphone, not a broadcast fan — the thing itself, doubled. -->
+  <defs>
+    <linearGradient id="nv-a" x1="4" y1="20" x2="42" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FD4B2"/><stop offset="1" stop-color="#6FE9CE"/>
+    </linearGradient>
+    <linearGradient id="nv-b" x1="4" y1="29" x2="42" y2="29" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7B69FF"/><stop offset="1" stop-color="#A99CFF"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-width="4.6" stroke-linecap="round">
+    <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="url(#nv-a)"/>
+    <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="url(#nv-b)"/>
+  </g>
+</svg>

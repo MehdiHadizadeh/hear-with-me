@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="nv-tm">
+  <title id="nv-tm">Hear With Me</title>
+  <!-- Single-colour cut: inherits `color` when inlined, black otherwise.
+       The two strands stay readable through weight, not hue. -->
+  <g fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round">
+    <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20"/>
+    <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" opacity=".5"/>
+  </g>
+</svg>

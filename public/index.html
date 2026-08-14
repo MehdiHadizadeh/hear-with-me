@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hear With Me — با هم گوش کنید، هم‌زمان</title>
+  <meta name="description" content="هرچی روی کامپیوترت پخش می‌شه رو زنده برای یک نفر دیگه بفرست. یک لینک، بدون اکانت، و صدا مستقیم بین دو مرورگر رد و بدل می‌شه." />
+  <meta name="theme-color" content="#070910" />
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <!-- %ORIGIN% is filled in by the server from the request's own host, so the
+       preview still resolves when the app is behind a tunnel or a real domain. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hear With Me" />
+  <meta property="og:locale" content="fa_IR" />
+  <meta property="og:title" content="Hear With Me — با هم گوش کنید، هم‌زمان" />
+  <meta property="og:description" content="هرچی داری گوش می‌دی رو زنده برای یک نفر دیگه پخش کن. بدون اکانت، و صدا از سرور رد نمی‌شه." />
+  <meta property="og:url" content="%ORIGIN%/" />
+  <meta property="og:image" content="%ORIGIN%/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Hear With Me" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preload" href="/fonts/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="shell shell--hero">
+    <header>
+      <a class="brand" href="/">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <defs>
+            <linearGradient id="ga" x1="4" y1="20" x2="42" y2="20" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#2FD4B2"/><stop offset="1" stop-color="#6FE9CE"/>
+            </linearGradient>
+            <linearGradient id="gb" x1="4" y1="29" x2="42" y2="29" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#7B69FF"/><stop offset="1" stop-color="#A99CFF"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke-width="4.6" stroke-linecap="round">
+            <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="url(#ga)"/>
+            <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="url(#gb)"/>
+          </g>
+        </svg>
+        <span class="brand-name">Hear With Me</span>
+      </a>
+    </header>
+
+    <main class="hero">
+      <!-- The paths run to x=3200, twice the widest visible slice of the
+           viewBox, and the drift below shifts them by exactly two wavelengths
+           (800). Both numbers matter: a shorter path leaves the right edge
+           empty for part of every cycle, and a shift that isn't a whole
+           number of wavelengths makes the loop visibly jump. -->
+      <div class="wavefield" aria-hidden="true">
+        <svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMid slice">
+          <g>
+            <path class="w1" d="M0 130C66.7 84.7 133.3 84.7 200 130C266.7 175.3 333.3 175.3 400 130C466.7 84.7 533.3 84.7 600 130C666.7 175.3 733.3 175.3 800 130C866.7 84.7 933.3 84.7 1000 130C1066.7 175.3 1133.3 175.3 1200 130C1266.7 84.7 1333.3 84.7 1400 130C1466.7 175.3 1533.3 175.3 1600 130C1666.7 84.7 1733.3 84.7 1800 130C1866.7 175.3 1933.3 175.3 2000 130C2066.7 84.7 2133.3 84.7 2200 130C2266.7 175.3 2333.3 175.3 2400 130C2466.7 84.7 2533.3 84.7 2600 130C2666.7 175.3 2733.3 175.3 2800 130C2866.7 84.7 2933.3 84.7 3000 130C3066.7 175.3 3133.3 175.3 3200 130"/>
+          </g>
+          <g class="lag">
+            <path class="w2" d="M0 170C66.7 124.7 133.3 124.7 200 170C266.7 215.3 333.3 215.3 400 170C466.7 124.7 533.3 124.7 600 170C666.7 215.3 733.3 215.3 800 170C866.7 124.7 933.3 124.7 1000 170C1066.7 215.3 1133.3 215.3 1200 170C1266.7 124.7 1333.3 124.7 1400 170C1466.7 215.3 1533.3 215.3 1600 170C1666.7 124.7 1733.3 124.7 1800 170C1866.7 215.3 1933.3 215.3 2000 170C2066.7 124.7 2133.3 124.7 2200 170C2266.7 215.3 2333.3 215.3 2400 170C2466.7 124.7 2533.3 124.7 2600 170C2666.7 215.3 2733.3 215.3 2800 170C2866.7 124.7 2933.3 124.7 3000 170C3066.7 215.3 3133.3 215.3 3200 170"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1 class="hero-title">هرچی الان گوش می‌دی، <em>هم‌زمان</em> برای یکی دیگه پخش کن.</h1>
+          <p class="hero-lead">یک لینک می‌فرستی، بازش می‌کنه، همون لحظه همون صدا رو می‌شنوه. اسپاتیفای، ساندکلاد، تلگرام وب، یا یک فایل روی دسکتاپ.</p>
+
+          <button class="btn btn-primary" id="createBtn">ساخت اتاق</button>
+
+          <p class="trust">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="4" y="10.5" width="16" height="10" rx="2.5"/>
+              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+            </svg>
+            <span><b>بدون حساب کاربری.</b> صدا مستقیم بین دو مرورگر رد و بدل می‌شه و از سرور عبور نمی‌کنه.</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="below">
+      <div class="divider"><span>یا</span></div>
+
+      <div class="panel">
+        <label class="field-label" for="joinInput">کد اتاق رو داری؟</label>
+        <div class="row">
+          <input type="text" id="joinInput" class="code-input" placeholder="7K3QFD" maxlength="64"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+          <button class="btn btn-secondary" id="joinBtn">ورود</button>
+        </div>
+        <p class="field-error" id="joinError" role="alert"></p>
+      </div>
+
+      <p class="note" style="margin-top:20px;">
+        <span class="note-strong">میزبان</span> باید روی دسکتاپ و با <span class="ltr">Chrome</span> یا <span class="ltr">Edge</span> باشه — این محدودیت خود مرورگرهاست. <span class="note-strong">مهمان‌ها</span> از هر دستگاه و هر مرورگری وصل می‌شن.
+      </p>
+      </div>
+    </main>
+
+    <p class="footer-note">Hear With Me — بدون ذخیره‌سازی، متن‌باز.</p>
+  </div>
+
+  <script type="module">
+    // What a room code is lives next to the server's own copy of the rule, so
+    // this page can never refuse a code the server just handed out.
+    import { isValidCode, normalizeCode } from '/shared/room-code.js';
+
+    const createBtn = document.getElementById('createBtn');
+    const joinBtn = document.getElementById('joinBtn');
+    const joinInput = document.getElementById('joinInput');
+    const joinError = document.getElementById('joinError');
+
+    function showJoinError(message) {
+      joinError.textContent = message;
+      joinError.classList.toggle('show', !!message);
+    }
+
+    createBtn.addEventListener('click', async () => {
+      createBtn.disabled = true;
+      createBtn.textContent = 'در حال ساخت...';
+      showJoinError('');
+      try {
+        const res = await fetch('/api/rooms', { method: 'POST' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || 'failed');
+        }
+        const data = await res.json();
+        window.location.href = `/r/${data.roomId}`;
+      } catch (e) {
+        createBtn.disabled = false;
+        createBtn.textContent = 'ساخت اتاق';
+        showJoinError(e.message === 'rate-limited'
+          ? 'تعداد اتاق‌هایی که پشت سر هم ساختی زیاده. چند دقیقه صبر کن.'
+          : 'ساخت اتاق با مشکل مواجه شد. دوباره تلاش کن.');
+      }
+    });
+
+    joinBtn.addEventListener('click', () => {
+      const code = normalizeCode(joinInput.value);
+      if (!code) return showJoinError('کد اتاق رو وارد کن.');
+      if (!isValidCode(code)) {
+        return showJoinError('این کد معتبر نیست. کد اتاق شش کاراکتره — یا کل لینک دعوت رو همین‌جا بچسبون.');
+      }
+      window.location.href = `/r/${code}`;
+    });
+
+    joinInput.addEventListener('input', () => showJoinError(''));
+    joinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinBtn.click(); });
+  </script>
+</body>
+</html>

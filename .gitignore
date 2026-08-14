@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+*.log
+.env
+
+# Editor and agent working files.
+.claude/
+.vscode/
+.idea/
+
+# Notes we keep for ourselves: handoff, product and design decisions.
+internal/

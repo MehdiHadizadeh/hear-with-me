@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>اتاق Hear With Me — با هم گوش کنید</title>
+  <meta name="description" content="این اتاق زنده‌ست: صدای میزبان مستقیم به مرورگر تو می‌رسه. بدون اکانت، بدون نصب." />
+  <meta name="theme-color" content="#070910" />
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <!-- The room link is the product's main surface: it gets pasted into
+       Telegram and WhatsApp, so the preview has to look like an invitation.
+       %ORIGIN% is filled in by the server from the request's own host. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hear With Me" />
+  <meta property="og:locale" content="fa_IR" />
+  <meta property="og:title" content="دعوت به یک اتاق زنده در Hear With Me" />
+  <meta property="og:description" content="لینک رو باز کن تا هم‌زمان همون چیزی رو بشنوی که طرف مقابل داره گوش می‌ده. بدون اکانت، بدون نصب." />
+  <meta property="og:image" content="%ORIGIN%/og-room.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Hear With Me" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preload" href="/fonts/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="room-head">
+      <a class="brand" href="/">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <defs>
+            <linearGradient id="ga" x1="4" y1="20" x2="42" y2="20" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#2FD4B2"/><stop offset="1" stop-color="#6FE9CE"/>
+            </linearGradient>
+            <linearGradient id="gb" x1="4" y1="29" x2="42" y2="29" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#7B69FF"/><stop offset="1" stop-color="#A99CFF"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke-width="4.6" stroke-linecap="round">
+            <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="url(#ga)"/>
+            <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="url(#gb)"/>
+          </g>
+        </svg>
+        <span class="brand-name">Hear With Me</span>
+      </a>
+
+      <div class="code-plate">
+        <span class="label">کد اتاق</span>
+        <span class="room-code" id="roomCode">----</span>
+        <button class="icon-btn" id="copyLinkBtn" type="button" aria-label="کپی لینک دعوت" title="کپی لینک دعوت">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2.5"/>
+            <path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="share-row">
+      <button class="btn btn-ghost" id="shareBtn" type="button">فرستادن لینک دعوت</button>
+      <!-- The host is on a desktop and the guest is on a phone, so the shortest
+           path between them is a camera, not a clipboard. -->
+      <button class="btn btn-ghost" id="qrBtn" type="button" aria-expanded="false" aria-controls="qrPanel">کد QR</button>
+    </div>
+
+    <div class="qr-panel" id="qrPanel" hidden>
+      <div class="qr-code" id="qrCode"></div>
+      <p class="note">با دوربین گوشی اسکنش کن تا مستقیم وارد همین اتاق بشه.</p>
+    </div>
+
+    <div class="status-row">
+      <span class="pill" id="connectionPill"><span class="dot"></span><span id="connectionText">در حال اتصال...</span></span>
+      <span class="pill" id="listenerPill"><span class="dot"></span><span id="listenerText">هنوز کسی نیومده</span></span>
+      <span class="pill" id="qualityPill" style="display:none;"><span class="dot"></span><span id="qualityText"></span></span>
+    </div>
+
+    <!-- One banner for anything that has to stay on screen until it is read.
+         It can always be dismissed: the version without a close button sat
+         there for the rest of the session. -->
+    <div class="notice" id="notice" role="status">
+      <span class="notice-text" id="noticeText"></span>
+      <button class="notice-close" id="noticeClose" type="button" aria-label="بستن این پیام">×</button>
+    </div>
+
+    <!-- Reactions land here: the guest's only way to say anything at all. -->
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- Room code was wrong, the room expired (e.g. server restart), or it
+         ended under us — same shape, different sentence. -->
+    <div class="panel" id="notFoundCard" style="display:none;">
+      <div class="stage" data-state="error">
+        <div class="stage-glyph"><div class="glyph glyph-alert">!</div></div>
+        <p class="stage-title" id="notFoundTitle">این اتاق پیدا نشد</p>
+        <p class="stage-sub" id="notFoundSub">یا کد اشتباهه، یا اتاق منقضی شده — با ری‌استارت شدن سرور همه‌ی اتاق‌ها پاک می‌شن.</p>
+      </div>
+      <div class="stack"><a class="btn btn-primary btn-link" href="/">ساخت اتاق جدید</a></div>
+    </div>
+
+    <!-- HOST view -->
+    <div class="panel" id="hostCard" style="display:none;">
+      <div class="stage" id="hostStage" data-state="idle">
+        <div class="stage-glyph">
+          <div class="glyph glyph-idle">
+            <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round">
+              <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20"/>
+              <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" opacity=".5"/>
+            </svg>
+          </div>
+          <div class="glyph glyph-alert">!</div>
+          <div class="meter idle" id="hostMeter" aria-hidden="true"></div>
+        </div>
+
+        <!-- Cheers land here and float away; anything the host has to act on
+             becomes a toast instead. -->
+        <div class="burst" id="hostBurst" aria-hidden="true"></div>
+
+        <p class="stage-title" id="hostTitle" aria-live="polite">تو میزبان این اتاقی</p>
+        <p class="stage-sub" id="hostStatus" aria-live="polite">هنوز چیزی پخش نمی‌شه.</p>
+
+        <!-- Only meaningful while sharing; JS reveals it. -->
+        <div class="livebox" id="hostLiveBox" style="display:none;">
+          <div class="live-row">
+            <span class="elapsed" id="hostElapsed">۰:۰۰</span>
+            <span class="live-hint" id="hostMeterHint">اگه میله‌ها تکون نمی‌خورن، یعنی صدایی گرفته نمی‌شه</span>
+          </div>
+
+          <div class="now-playing" style="padding:14px 15px;">
+            <label class="np-label" for="nowPlayingInput">داری چی گوش می‌دی؟ (اختیاری — به مهمان‌ها نشون داده می‌شه)</label>
+            <div class="row">
+              <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead — Weird Fishes" />
+              <button class="btn btn-secondary" id="nowPlayingBtn">ثبت</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="host-brief">
+        تبی که صدا توشه رو انتخاب کن — <span class="ltr">Spotify</span>، ساندکلاد، تلگرام وب. موقع انتخاب <kbd>Share tab audio</kbd> رو تیک بزن، وگرنه صدا نمی‌ره.
+      </p>
+
+      <div class="stack">
+        <button class="btn btn-primary" id="startShareBtn">شروع پخش صدا</button>
+        <!-- Swapping the captured tab re-points the existing connections
+             instead of tearing them down, so nobody drops out. -->
+        <button class="btn btn-secondary" id="switchSourceBtn" style="display:none;">تعویض منبع صدا</button>
+        <button class="btn btn-ghost" id="stopShareBtn" style="display:none;">توقف پخش</button>
+      </div>
+
+      <div class="tools">
+        <!-- Who is here comes first: it is the only part of this shelf that
+             changes on its own, and the only part with names on it. -->
+        <div class="members" id="membersBox" style="display:none;">
+          <p class="tool-label">مهمان‌ها</p>
+          <ul class="member-list" id="memberList"></ul>
+        </div>
+
+        <div class="tool-row">
+          <label class="tool-label" for="qualitySelect">کیفیت صدا</label>
+          <select id="qualitySelect" class="select">
+            <option value="high">بالا — ۲۵۶ کیلوبیت</option>
+            <option value="normal">معمولی — ۱۲۸ کیلوبیت</option>
+            <option value="low">کم‌مصرف — ۶۴ کیلوبیت</option>
+          </select>
+        </div>
+        <p class="tool-hint">روی دیتای همراه، «کم‌مصرف» مصرف مهمان رو حدود چهار برابر کم می‌کنه.</p>
+
+        <label class="toggle">
+          <input type="checkbox" id="lockToggle" />
+          <span>قفل کردن اتاق — کسی جز افراد فعلی نتونه وارد بشه</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="closeOnLeaveToggle" />
+          <span>با خروج من اتاق بسته بشه — وگرنه میزبانی به اولین نفر می‌رسه</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- GUEST view -->
+    <div class="panel" id="guestCard" style="display:none;">
+      <div class="stage" id="guestStage" data-state="waiting">
+        <div class="stage-glyph">
+          <div class="glyph glyph-wait"></div>
+          <div class="glyph glyph-connect"></div>
+          <div class="glyph glyph-flat"></div>
+          <div class="glyph glyph-alert">!</div>
+          <div class="meter idle" id="guestMeter" aria-hidden="true"></div>
+        </div>
+
+        <div class="burst" id="guestBurst" aria-hidden="true"></div>
+
+        <p class="stage-title" id="guestStatusTitle" aria-live="polite">در انتظار میزبان</p>
+        <p class="stage-sub" id="guestStatusSub" aria-live="polite">وقتی میزبان پخش رو شروع کنه، همین‌جا خودکار می‌شنوی.</p>
+
+        <p class="now-playing" id="guestNowPlaying" style="display:none;"></p>
+
+        <div class="livebox" id="guestLiveBox" style="display:none;">
+          <div class="live-row">
+            <span class="elapsed" id="guestElapsed">۰:۰۰</span>
+            <span class="live-hint">مستقیم از مرورگر میزبان</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- The audio path is one-way by design, so without these the person
+           listening has no way to say "I can't hear anything". Nothing here
+           duplicates the volume slider directly above — the host cannot fix
+           your volume, only a source that is quiet at full blast. -->
+      <div class="reactions" id="reactionRow">
+        <button class="reaction" type="button" data-kind="love" aria-label="دوستش دارم">❤</button>
+        <button class="reaction" type="button" data-kind="fire" aria-label="عالیه">🔥</button>
+        <button class="reaction" type="button" data-kind="whatsthis">این چیه؟</button>
+        <button class="reaction" type="button" data-kind="quiet">صدا کمه</button>
+        <button class="reaction" type="button" data-kind="broken">بریده‌بریده</button>
+        <button class="reaction" type="button" data-kind="nosound">صدا نمیاد</button>
+      </div>
+
+      <div class="volume-row">
+        <button class="icon-btn mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="بی‌صدا کردن">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M11 5 6.5 9H3v6h3.5L11 19z"/>
+            <path class="wave-on" d="M15.5 9.2a4 4 0 0 1 0 5.6M18.4 6.6a8 8 0 0 1 0 10.8"/>
+            <path class="wave-off" d="M16 10l5 5m0-5-5 5"/>
+          </svg>
+        </button>
+        <input type="range" id="volumeBar" min="0" max="1" value="1" step="0.01" aria-label="شدت صدا" />
+      </div>
+
+      <div class="tools">
+        <div class="tool-row">
+          <label class="tool-label" for="nameInput">اسمت</label>
+          <input type="text" id="nameInput" maxlength="24" placeholder="مثلاً مهدی" autocomplete="nickname" />
+        </div>
+        <p class="tool-hint">میزبان همینو کنار واکنش‌هات می‌بینه — وگرنه فقط «مهمان ۱» می‌بینه.</p>
+
+        <!-- The guest cannot set the sender's bitrate, but it can ask for a
+             lower one; the host's own setting stays the ceiling. -->
+        <div class="tool-row">
+          <label class="tool-label" for="receiveQuality">کیفیت صدا</label>
+          <select id="receiveQuality" class="select">
+            <option value="auto">مثل میزبان</option>
+            <option value="mid">حداکثر ۱۲۸ کیلوبیت</option>
+            <option value="low">حداکثر ۶۴ کیلوبیت</option>
+          </select>
+        </div>
+
+
+        <!-- Only offered where it changes anything: a screen that locks itself
+             is the most common way playback dies on a phone. -->
+        <label class="toggle" id="wakeLockRow" style="display:none;">
+          <input type="checkbox" id="wakeLockToggle" />
+          <span>صفحه روشن بمونه تا صدا قطع نشه</span>
+        </label>
+      </div>
+
+      <p class="note" id="backgroundHint" style="display:none; margin-top:14px;">تا وقتی این صفحه بازه صدا پخش می‌شه. اگه گوشی رو قفل کنی یا از مرورگر بیرون بری پخش قطع می‌شه — این محدودیت خود مرورگرهاست. برگردی به همین تب، خودکار وصل می‌شه.</p>
+      <p class="note" id="volumeHint" style="display:none; margin-top:14px;">این دستگاه اجازه‌ی تنظیم شدت صدا از داخل صفحه رو نمی‌ده — با دکمه‌های خود دستگاه کم و زیادش کن. دکمه‌ی کناری صدا رو کامل قطع/وصل می‌کنه.</p>
+    </div>
+
+    <p class="footer-note">صدا مستقیم بین مرورگر میزبان و مرورگر تو رد و بدل می‌شه و از سرور عبور نمی‌کنه.</p>
+  </div>
+
+  <div class="enable-audio-overlay hidden" id="enableAudioOverlay">
+    <div class="inner">
+      <svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true" fill="none" stroke="#3FE0BE" stroke-width="4.6" stroke-linecap="round" style="margin-inline:auto;display:block">
+        <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20"/>
+        <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" opacity=".5"/>
+      </svg>
+      <p>مرورگر اجازه‌ی پخش خودکار نمی‌ده. برای شنیدن صدای زنده یک بار لمس کن.</p>
+      <button class="btn btn-primary" id="enableAudioBtn">آماده‌ام</button>
+    </div>
+  </div>
+
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <!-- ES modules: app.js imports the rest of ./js and ./shared itself. No
+       build step, no bundler — the browser resolves them. -->
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
