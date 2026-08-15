@@ -39,7 +39,7 @@ ui.roomCode.textContent = roomId;
 
 const identity = loadIdentity(roomId);
 const api = createRoomApi(roomId, identity);
-const events = createRoomEvents(api.eventStreamUrl());
+const events = createRoomEvents(api);
 const rtcConfig = loadRtcConfig();
 
 const notices = createNotices(ui);

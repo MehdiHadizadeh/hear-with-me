@@ -7,6 +7,9 @@ export function createRoomApi(roomId, identity) {
   const base = `/api/rooms/${encodeURIComponent(roomId)}`;
   const { clientId, secret } = identity;
 
+  const credentials = () => `clientId=${encodeURIComponent(clientId)}`
+    + `&secret=${encodeURIComponent(secret)}`;
+
   // A failed send is a normal network event here, not a programming error: the
   // watchdogs in the session code are what recover from it. Callers that do
   // care (creating a room, reading room info) use `fetch` results directly.
@@ -20,8 +23,14 @@ export function createRoomApi(roomId, identity) {
     roomId,
     clientId,
 
-    eventStreamUrl: () => `${base}/events`
-      + `?clientId=${encodeURIComponent(clientId)}&secret=${encodeURIComponent(secret)}`,
+    // The same endpoint, reached two ways. Which one is used is the server's
+    // call, not ours — see js/room-events.js.
+    eventStreamUrl: () => `${base}/events?${credentials()}`,
+
+    socketUrl: () => {
+      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      return `${scheme}://${window.location.host}${base}/events?${credentials()}`;
+    },
 
     // Tells "this room doesn't exist" apart from "the network is flaky":
     // EventSource reports both as a bare error event.

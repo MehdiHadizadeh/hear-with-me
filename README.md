@@ -104,7 +104,13 @@ Playback                  ← any browser, any device
 
 The server does four things: it creates rooms, decides who the host is, relays
 "sharing started/stopped", and passes WebRTC offers, answers and ICE candidates
-between members over Server-Sent Events.
+between members.
+
+That last channel can be either **Server-Sent Events** or a **WebSocket**: the
+page carries a `transport` meta tag that the server fills in, and the client
+speaks both. This server uses SSE, which is what a long-lived process does
+best; an edge runtime that cannot hold a response open can serve the same
+client and say `ws` instead.
 
 ```
 server.js          wiring
