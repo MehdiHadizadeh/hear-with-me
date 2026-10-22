@@ -5,17 +5,20 @@
 // owns it. The pieces themselves live in ./js and know nothing about each
 // other.
 //
-//   dom / format / prefs        the page, its words, and what the browser remembers
-//   identity / api / room-events  who we are, what we can ask for, what we're told
+//   dom / format / prefs / platform   the page, its words, what the browser remembers, what the device can do
+//   identity / api / room-events      who we are, what we can ask for, what we're told
 //   audio-meter / elapsed-timer / connection-quality   what the room shows about itself
-//   audio-quality / ice         what the audio costs and how it finds a path
-//   host-session / guest-session  the two halves of a room
-//   roster / notices / invite   people, messages, and getting the link out
+//   audio-quality / ice               what the audio costs and how it finds a path
+//   host-session / guest-session      the two halves of a room
+//   relay-encoder / relay-player      the screen-off path, from each side
+//   roster / notices / invite         people, messages, and getting the link out
+//   end-card / car-mode / metrics     what a guest keeps, a dashboard view, and what we count
 
 import { REACTIONS } from './shared/reactions.js';
 import { show, ui } from './js/dom.js';
 import { faDigits } from './js/format.js';
 import { prefs } from './js/prefs.js';
+import { isTouchDevice } from './js/platform.js';
 import { loadIdentity } from './js/identity.js';
 import { createRoomApi } from './js/api.js';
 import { createRoomEvents } from './js/room-events.js';
@@ -30,9 +33,13 @@ import { createRoster } from './js/roster.js';
 import { createHostSession } from './js/host-session.js';
 import { createGuestSession } from './js/guest-session.js';
 import { setupInvite } from './js/invite.js';
+import { createEndCard } from './js/end-card.js';
+import { createCarMode } from './js/car-mode.js';
+import { report } from './js/metrics.js';
 
 const REACTION_COOLDOWN_MS = 1000; // the server refuses anything faster anyway
 const NAME_DEBOUNCE_MS = 600;      // typing is not an event worth a request per keystroke
+const END_CARD_MIN_MS = 20000;     // under this, there is nothing to remember yet
 
 const roomId = decodeURIComponent(window.location.pathname.split('/').pop()).toUpperCase();
 ui.roomCode.textContent = roomId;
@@ -64,33 +71,51 @@ const stats = createConnectionQuality({
 });
 
 const host = createHostSession({
-  ui, api, quality, stats, rtcConfig,
+  ui, api, quality, stats, rtcConfig, prefs, notices, report,
   meter: hostMeter,
   timer: hostTimer,
   onQualityChange: prefs.setQuality,
 });
 
 const guest = createGuestSession({
-  ui, api, quality, events, wakeLock, stats, prefs, rtcConfig,
+  ui, api, quality, events, wakeLock, stats, prefs, rtcConfig, notices,
   meter: guestMeter,
   timer: guestTimer,
 });
 
 setupInvite({ ui, roomId, notices });
+const endCard = createEndCard({ ui, notices });
+const carMode = createCarMode({ ui, guest });
 
 let isHost = false;
 let sharingNow = false;
 let terminated = false;
+let hostName = '';
 
 // ---------------------------------------------------------------------------
 // Which half of the room we are
 // ---------------------------------------------------------------------------
 
+// The header is the host's instrument panel and the guest's title card: a
+// guest has no use for a copy button or a count of listeners, so those go.
 function showRole(asHost) {
   isHost = asHost;
-  show(ui.hostCard, asHost);
+  show(ui.hostCard, asHost, 'grid');
   show(ui.guestCard, !asHost);
+  ui.roomShell.classList.toggle('is-host', asHost);
+  ui.roomShell.classList.toggle('is-guest', !asHost);
+  show(ui.copyLinkBtn, asHost, 'grid');
+  ui.codePlate.classList.toggle('is-bare', !asHost);
+  show(ui.statusRow, asHost, 'flex');
   roster.setHostView(asHost);
+}
+
+// The guest page leads with who is playing; that name comes from the roster.
+function updateHostName(members) {
+  const hostMember = (members || []).find((m) => m.isHost);
+  hostName = (hostMember && hostMember.name) || '';
+  guest.setHostName(hostName);
+  carMode.setTitle(hostName ? `${hostName} داره پخش می‌کنه` : 'در حال پخش');
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +138,7 @@ ui.nameInput.addEventListener('blur', () => {
 let lastReactionSent = 0;
 ui.reactionRow.addEventListener('click', (e) => {
   const button = e.target.closest('.reaction');
-  if (!button) return;
+  if (!button || button === ui.moreReactionsBtn || button.disabled) return;
   // Swallowing a too-early tap silently made the button look broken, so say
   // it landed too soon instead.
   if (Date.now() - lastReactionSent < REACTION_COOLDOWN_MS) {
@@ -125,6 +150,13 @@ ui.reactionRow.addEventListener('click', (e) => {
   api.react(button.dataset.kind);
   button.classList.add('sent');
   setTimeout(() => button.classList.remove('sent'), 600);
+});
+
+ui.moreReactionsBtn.addEventListener('click', () => {
+  const opening = ui.moreReactions.hidden;
+  ui.moreReactions.hidden = !opening;
+  ui.moreReactionsBtn.setAttribute('aria-expanded', String(opening));
+  ui.moreReactionsBtn.textContent = opening ? 'کمتر' : 'بیشتر';
 });
 
 // ---------------------------------------------------------------------------
@@ -142,13 +174,19 @@ function showDeadEnd(title, sub) {
   ui.notFoundSub.textContent = sub;
   show(ui.notFoundCard, true);
 
-  show(ui.shareRow, false);
   ui.qrPanel.hidden = true;
   ui.qrBtn.setAttribute('aria-expanded', 'false');
   show(ui.copyLinkBtn, false);
   ui.codePlate.classList.add('is-bare');
   show(ui.listenerPill, false);
   show(ui.qualityPill, false);
+
+  // A phone cannot host what it hears, so offering "create a room" there sent
+  // people into something that failed a step later. What they can do is ask
+  // for a fresh link.
+  if (isTouchDevice) {
+    ui.notFoundCta.textContent = 'ساخت اتاق با یه فایل از گوشیم';
+  }
 }
 
 function endRoom(title, sub) {
@@ -173,33 +211,42 @@ events.on('welcome', (data) => {
   sharingNow = data.isSharing;
   showRole(data.isHost);
   roster.seed(data.members);
+  updateHostName(data.members);
   host.applySettings(data.settings);
+  guest.applySettings(data.settings);
 
   if (isHost) {
     stats.stop(); // a fresh host isn't sending anything yet
+    host.handleRelayDemand(data.relayDemand);
+    host.announceName();
     return;
   }
 
   if (ui.nameInput.value) api.setName(ui.nameInput.value); // we already know what to call ourselves
   guest.renderNowPlaying(data.nowPlaying);
+  guest.applyShare({ relayFormat: data.relayFormat });
 
   if (!data.isSharing) { guest.waitForHost(); return; }
   // Late joiners pick the timer up mid-session rather than from zero.
   if (data.sharingElapsedMs !== null) guestTimer.start(data.sharingElapsedMs);
-  if (!guest.isHealthy()) guest.connect();
+  guest.startListening({ reconnect: !guest.isHealthy() });
 });
 
-events.on('sharing-started', () => {
+events.on('sharing-started', (data) => {
   sharingNow = true;
   if (isHost) return;
+  endCard.hide();
   guest.renderNowPlaying('');
+  guest.applyShare({ relayFormat: data.relayFormat });
   guestTimer.start(0);
-  guest.connect();
+  guest.startListening();
 });
 
 events.on('sharing-stopped', () => {
   sharingNow = false;
-  if (!isHost) guest.handleSharingStopped();
+  if (isHost) return;
+  const listened = guest.handleSharingStopped();
+  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName);
 });
 
 events.on('now-playing', ({ text }) => {
@@ -222,9 +269,16 @@ events.on('peer-left', ({ clientId: goneId, force }) => {
   if (isHost) host.handlePeerLeft(goneId, force);
 });
 
+events.on('relay-demand', ({ count }) => {
+  if (isHost) host.handleRelayDemand(count);
+});
+
 events.on('listener-count', ({ count }) => roster.renderCount(count));
-events.on('members', ({ members }) => roster.update(members));
-events.on('room-settings', (settings) => host.applySettings(settings));
+events.on('members', ({ members }) => { roster.update(members); updateHostName(members); });
+events.on('room-settings', (settings) => {
+  host.applySettings(settings);
+  guest.applySettings(settings);
+});
 
 events.on('reaction', ({ from, kind }) => {
   const reaction = REACTIONS[kind];
@@ -253,12 +307,13 @@ events.on('you-are-host', ({ reason }) => {
   guest.stopListening();
   showRole(true);
   host.activate({ fresh: true });
+  host.announceName();
   guest.renderNowPlaying('');
   // Informational, not an error — so it clears itself once it's been read,
   // and can be dismissed on the spot.
   notices.showInfo(reason === 'transfer'
     ? 'میزبان قبلی اتاق رو به تو سپرد. برای پخش، «شروع پخش صدا» رو بزن.'
-    : 'میزبان قبلی خارج شد — الان تو میزبان جدید این اتاقی. برای ادامه، «شروع پخش صدا» رو بزن.');
+    : 'میزبان قبلی رفت؛ حالا تو میزبان این اتاقی. برای ادامه، «شروع پخش صدا» رو بزن.');
 });
 
 // Someone else took the room: either we handed it over, or the server moved
@@ -276,7 +331,7 @@ events.on('evicted', () => {
 });
 
 events.on('room-closed', () => {
-  endRoom('اتاق بسته شد', 'میزبان اتاق رو ترک کرد و اتاق با رفتنش بسته شد.');
+  endRoom('اتاق بسته شد', 'میزبان رفت و اتاق با رفتنش بسته شد.');
 });
 
 events.onError(async () => {
@@ -292,7 +347,7 @@ events.onError(async () => {
   const info = await api.info();
 
   if (info && info.missing) {
-    endRoom('این اتاق پیدا نشد', 'یا کد اشتباهه، یا اتاق منقضی شده — با ری‌استارت شدن سرور همه‌ی اتاق‌ها پاک می‌شن.');
+    endRoom('این اتاق پیدا نشد', 'یا کد اشتباهه، یا این اتاق دیگه وجود نداره. از کسی که لینک رو فرستاده یه لینک تازه بخواه.');
     ui.connectionText.textContent = 'اتاق پیدا نشد';
   } else if (info && info.locked) {
     // The room exists and refused us: it is locked, or we were removed from
@@ -310,6 +365,26 @@ document.addEventListener('visibilitychange', () => {
   if (sharingNow) guest.handleVisible();
 });
 
+// Car mode mirrors the guest's stage, whatever changed it.
+new MutationObserver(() => carMode.setState(ui.guestStage.dataset.state))
+  .observe(ui.guestStage, { attributes: true, attributeFilter: ['data-state'] });
+
+// ---------------------------------------------------------------------------
+// The mark breathes with the sound
+// ---------------------------------------------------------------------------
+
+// The second strand of the header mark rides the level of what is playing —
+// read from the same analyser as the meter, so it is as honest as the meter.
+// Nothing moves when nothing plays, or for anyone who asked for less motion.
+if (ui.markVoice && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const breathe = () => {
+    const level = (isHost ? hostMeter : guestMeter).level();
+    ui.markVoice.style.transform = `translateY(${(Math.min(1, level * 1.6) * 3.5).toFixed(2)}px)`;
+    requestAnimationFrame(breathe);
+  };
+  requestAnimationFrame(breathe);
+}
+
 // ---------------------------------------------------------------------------
 // Diagnostics
 // ---------------------------------------------------------------------------
@@ -322,16 +397,16 @@ window.__hwmRoute = async () => {
   const pcs = isHost ? [...host.peers.values()] : [guest.connection].filter(Boolean);
   const out = [];
   for (const pc of pcs) {
-    const report = await pc.getStats();
+    const report_ = await pc.getStats();
     let pair = null;
-    report.forEach((r) => {
+    report_.forEach((r) => {
       if (r.type === 'candidate-pair' && r.state === 'succeeded' && (r.nominated || !pair)) pair = r;
     });
     if (!pair) { out.push({ state: pc.connectionState, route: 'no succeeded candidate pair yet' }); continue; }
 
     let local = null;
     let remote = null;
-    report.forEach((r) => {
+    report_.forEach((r) => {
       if (r.id === pair.localCandidateId) local = r;
       if (r.id === pair.remoteCandidateId) remote = r;
     });
@@ -356,12 +431,18 @@ if (new URLSearchParams(window.location.search).has('debug')) {
   window.__hwmKillEventStream = () => events.close();
 }
 
-// Guests need nothing but a browser that can receive WebRTC — which is all of
+// Guests need nothing but a browser that can play a stream — which is all of
 // them — but saying so plainly beats a page that simply never connects.
-if (!window.RTCPeerConnection) {
+if (!window.RTCPeerConnection && !window.HTMLAudioElement) {
   showDeadEnd(
     'این مرورگر پخش زنده رو پشتیبانی نمی‌کنه',
-    'با Chrome، Edge، Firefox یا Safari باز کن — این صفحه به WebRTC نیاز داره.',
+    'با Chrome، Edge، Firefox یا Safari باز کن.',
   );
   ui.connectionText.textContent = 'پشتیبانی نمی‌شه';
+}
+
+// The page works as an installed app too; the worker only ever caches the
+// shell, never a room's audio or its API.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }

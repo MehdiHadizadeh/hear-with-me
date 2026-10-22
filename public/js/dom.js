@@ -8,7 +8,10 @@ const byId = (id) => document.getElementById(id);
 
 export const ui = Object.freeze({
   // header and status
+  roomShell: byId('roomShell'),
   codePlate: document.querySelector('.code-plate'),
+  markVoice: document.querySelector('.room-head .mark-voice'),
+  statusRow: byId('statusRow'),
   roomCode: byId('roomCode'),
   connectionPill: byId('connectionPill'),
   connectionText: byId('connectionText'),
@@ -22,6 +25,8 @@ export const ui = Object.freeze({
   noticeText: byId('noticeText'),
   noticeClose: byId('noticeClose'),
   toasts: byId('toasts'),
+  alertLive: byId('alertLive'),
+  footerNote: byId('footerNote'),
 
   // invite
   shareRow: document.querySelector('.share-row'),
@@ -35,6 +40,8 @@ export const ui = Object.freeze({
   notFoundCard: byId('notFoundCard'),
   notFoundTitle: byId('notFoundTitle'),
   notFoundSub: byId('notFoundSub'),
+  notFoundActions: byId('notFoundActions'),
+  notFoundCta: byId('notFoundCta'),
 
   // host
   hostCard: byId('hostCard'),
@@ -45,7 +52,18 @@ export const ui = Object.freeze({
   hostMeter: byId('hostMeter'),
   hostElapsed: byId('hostElapsed'),
   hostLiveBox: byId('hostLiveBox'),
+  hostRehearsal: byId('hostRehearsal'),
+  hostPlatformNote: byId('hostPlatformNote'),
+  hostNameInput: byId('hostNameInput'),
   startShareBtn: byId('startShareBtn'),
+  fileShareLabel: byId('fileShareLabel'),
+  fileShareText: byId('fileShareText'),
+  fileInput: byId('fileInput'),
+  fileControls: byId('fileControls'),
+  filePlayBtn: byId('filePlayBtn'),
+  fileName: byId('fileName'),
+  micRow: byId('micRow'),
+  micToggle: byId('micToggle'),
   switchSourceBtn: byId('switchSourceBtn'),
   stopShareBtn: byId('stopShareBtn'),
   nowPlayingInput: byId('nowPlayingInput'),
@@ -53,6 +71,7 @@ export const ui = Object.freeze({
   qualitySelect: byId('qualitySelect'),
   lockToggle: byId('lockToggle'),
   closeOnLeaveToggle: byId('closeOnLeaveToggle'),
+  directOnlyToggle: byId('directOnlyToggle'),
   membersBox: byId('membersBox'),
   memberList: byId('memberList'),
 
@@ -66,7 +85,23 @@ export const ui = Object.freeze({
   guestElapsed: byId('guestElapsed'),
   guestLiveBox: byId('guestLiveBox'),
   guestNowPlaying: byId('guestNowPlaying'),
+  guestWho: byId('guestWho'),
+  pathChip: byId('pathChip'),
+  listenGate: byId('listenGate'),
+  listenBtn: byId('listenBtn'),
+  modeRelay: byId('modeRelay'),
+  modeDirect: byId('modeDirect'),
   reactionRow: byId('reactionRow'),
+  moreReactionsBtn: byId('moreReactionsBtn'),
+  moreReactions: byId('moreReactions'),
+  guestDrawer: byId('guestDrawer'),
+  guestShareBtn: byId('guestShareBtn'),
+  carModeBtn: byId('carModeBtn'),
+  endCard: byId('endCard'),
+  endDuration: byId('endDuration'),
+  endTitle: byId('endTitle'),
+  sendToSelfBtn: byId('sendToSelfBtn'),
+  storyBtn: byId('storyBtn'),
   nameInput: byId('nameInput'),
   receiveQuality: byId('receiveQuality'),
   wakeLockRow: byId('wakeLockRow'),
@@ -78,6 +113,13 @@ export const ui = Object.freeze({
   remoteAudio: byId('remoteAudio'),
   enableAudioOverlay: byId('enableAudioOverlay'),
   enableAudioBtn: byId('enableAudioBtn'),
+
+  // car mode
+  carMode: byId('carMode'),
+  carExitBtn: byId('carExitBtn'),
+  carTitle: byId('carTitle'),
+  carState: byId('carState'),
+  carPlayBtn: byId('carPlayBtn'),
 });
 
 // Every connection state gets its own colour, glyph and motion, not just a
@@ -89,6 +131,4 @@ export const show = (el, visible, display = 'block') => {
   if (el) el.style.display = visible ? display : 'none';
 };
 
-// Guests are overwhelmingly on a phone, and a few warnings only earn their
-// space there.
-export const isTouchDevice = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+export { isTouchDevice } from './platform.js';

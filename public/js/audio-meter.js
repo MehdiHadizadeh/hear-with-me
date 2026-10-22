@@ -88,6 +88,18 @@ export function createLevelMeter(container, barCount = 32) {
 
     isRunning() { return frame !== null; },
 
+    // The loudest sample right now, 0..1. Read directly rather than from the
+    // drawing loop, because animation frames stop on a hidden tab and the
+    // host's tab is usually hidden behind the music.
+    level() {
+      if (!analyser) return 0;
+      const wave = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(wave);
+      let peak = 0;
+      for (const v of wave) peak = Math.max(peak, Math.abs(v - 128));
+      return peak / 128;
+    },
+
     stop() {
       if (frame) { cancelAnimationFrame(frame); frame = null; }
       if (source) { try { source.disconnect(); } catch (e) { /* already gone */ } source = null; }

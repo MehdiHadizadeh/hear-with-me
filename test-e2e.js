@@ -201,6 +201,8 @@ function waitForServer(url, isGone, tries = 30) {
 
     // A guest asking for less. The host holds one connection per guest, so the
     // request has to narrow that one stream and leave the other at full rate.
+    // The guest's settings live in a drawer that stays shut until wanted.
+    await guestPage.click('#guestDrawer > summary');
     await guestPage.selectOption('#receiveQuality', 'low');
     await hostPage.waitForTimeout(1200);
     const bitrates = await hostPage.evaluate(async () => {

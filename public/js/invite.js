@@ -36,7 +36,7 @@ export function setupInvite({ ui, roomId, notices }) {
       try {
         await navigator.share({
           title: 'Hear With Me',
-          text: `بیا با هم گوش کنیم — کد اتاق: ${roomId}`,
+          text: `بیا اینو با هم گوش بدیم · کد اتاق ${roomId}`,
           url: inviteUrl(),
         });
       } catch (e) { /* user dismissed */ }
@@ -47,6 +47,15 @@ export function setupInvite({ ui, roomId, notices }) {
       ui.shareBtn.textContent = 'لینک کپی شد ✔';
       setTimeout(() => { ui.shareBtn.textContent = original; }, CONFIRM_MS);
     }, copyFailed);
+  });
+
+  // A guest passing the room on: the same link, from the drawer.
+  ui.guestShareBtn.addEventListener('click', async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Hear With Me', text: 'بیا اینو با هم گوش بدیم', url: inviteUrl() }); } catch (e) { /* dismissed */ }
+      return;
+    }
+    navigator.clipboard.writeText(inviteUrl()).then(() => notices.showInfo('لینک اتاق کپی شد.'), copyFailed);
   });
 
   // The host is on a desktop, the guest is holding a camera. Rendered on first

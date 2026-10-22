@@ -44,7 +44,9 @@ export function createRoomApi(roomId, identity) {
       }
     },
 
-    setSharing: (on) => post('/sharing', { action: on ? 'start' : 'stop' }),
+    // `details` says what the guests will be offered: which relay format the
+    // host can encode (or none), and what kind of source this is.
+    setSharing: (on, details = {}) => post('/sharing', { action: on ? 'start' : 'stop', ...details }),
     setNowPlaying: (text) => post('/now-playing', { text }),
     setName: (name) => post('/name', { name }),
     react: (kind) => post('/reaction', { kind }),
@@ -52,5 +54,29 @@ export function createRoomApi(roomId, identity) {
     kick: (targetId) => post('/kick', { targetId }),
     makeHost: (targetId) => post('/host', { targetId }),
     signal: (to, type, payload) => post('/signal', { to, type, payload }),
+
+    // -- the screen-off relay ------------------------------------------------
+
+    // The stream URL ends up in an <audio src>, so it carries a short-lived
+    // token rather than our secret. Resolves to { token, format } or to an
+    // { error } saying why not.
+    async relayToken() {
+      const res = await post('/relay-token', {});
+      if (!res) return { error: 'offline' };
+      const body = await res.json().catch(() => ({}));
+      return res.ok ? body : { error: body.error || 'refused' };
+    },
+    relayUrl: (token) => `${base}/relay?t=${encodeURIComponent(token)}`,
+
+    // The body is audio, so the credentials go in headers.
+    uploadRelayChunk: (generation, seq, bytes) => fetch(`${base}/relay?gen=${generation}&seq=${seq}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'X-HWM-Client': clientId,
+        'X-HWM-Secret': secret,
+      },
+      body: bytes,
+    }).catch(() => null),
   };
 }

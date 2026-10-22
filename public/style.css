@@ -412,9 +412,9 @@ input[type="text"].code-input {
   background: var(--panel-2);
   border: 1px solid var(--line);
   color: var(--muted);
-  border-radius: 9px;
-  width: 38px;
-  height: 38px;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   flex: none;
@@ -498,12 +498,12 @@ input[type="text"].code-input {
   color: var(--muted);
   line-height: 1.5;
   cursor: pointer;
-  min-height: 32px;
+  min-height: 44px;
 }
 .toggle input {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   accent-color: var(--signal);
   cursor: pointer;
 }
@@ -546,8 +546,8 @@ input[type="text"].code-input {
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--muted);
-  padding: 7px 11px;
-  min-height: 34px;
+  padding: 9px 12px;
+  min-height: 44px;
   transition: color .18s var(--ease), border-color .18s var(--ease);
 }
 .link-btn:hover { color: var(--text); border-color: var(--line-strong); }
@@ -971,10 +971,10 @@ input[type="text"].code-input {
   color: inherit;
   opacity: .65;
   flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  margin: -3px -5px 0 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  margin: -12px -12px -12px -8px;
 }
 .notice-close:hover { opacity: 1; }
 @keyframes rise { from { opacity: 0; transform: translateY(-6px); } }
@@ -1046,7 +1046,9 @@ kbd {
    that header is actually for, and the two together no longer fit. The landing
    page keeps its wordmark: there the header is the only place the name appears. */
 @media (max-width: 420px) {
-  .room-head .brand-name { display: none; }
+  .room-head .brand-name { font-size: 15.5px; }
+  .room-head .brand svg { width: 28px; height: 28px; }
+  .code-plate .label { display: none; }
 }
 @media (max-width: 380px) {
   .brand-name { font-size: 16px; }
@@ -1063,4 +1065,341 @@ kbd {
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* =====================================================================
+   Reach: the guest's three acts, the host's two columns, and the
+   screen-off path. Same world — panels, hairlines, two voices.
+   ===================================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The parts the browser draws carry the palette too. */
+::selection { background: color-mix(in srgb, var(--signal) 32%, transparent); color: var(--text); }
+input[type="text"] { caret-color: var(--signal); }
+html { scrollbar-color: var(--line-strong) var(--ink); }
+
+/* The mark's second strand rides the level of what is playing (app.js). */
+.mark-voice { transition: transform .12s linear; transform-box: fill-box; }
+
+.stage-words { display: grid; gap: 4px; }
+.stage-words .stage-title { margin-bottom: 0; }
+
+/* -------------------------------------------------------------- the host */
+
+.host-layout { display: grid; gap: 14px; }
+.host-main, .host-side > .panel { min-width: 0; }
+.host-side { display: grid; gap: 14px; align-content: start; }
+.host-side .share-row { margin: 16px 0 0; }
+.host-side .qr-panel { margin: 14px 0 0; }
+.host-side .members { margin-top: 16px; }
+
+.field { display: grid; gap: 8px; }
+.field .tool-hint { margin-top: 0; }
+
+/* Rehearsing the one switch before the browser's picker covers the page. */
+.rehearsal {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.steps li::before {
+  content: counter(step, persian);
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--signal);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.steps b { color: var(--text); font-weight: 600; }
+
+/* A drawing of Chrome's own picker, in Chrome's own light palette, so it is
+   recognised the moment the real one opens. Only the outline is ours. */
+.picker-sketch {
+  margin: 0;
+  direction: ltr;
+  text-align: left;
+  background: #F3F4F7;
+  color: #1C2030;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+}
+.ps-head { font-weight: 600; font-size: 12.5px; }
+.ps-tabs { display: flex; gap: 12px; color: #5B6275; border-bottom: 1px solid #D6D9E2; padding-bottom: 6px; }
+.ps-tabs .on { color: #1A5FD0; box-shadow: 0 2px 0 #1A5FD0; }
+.ps-row { background: #fff; border: 1px solid #D6D9E2; border-radius: 7px; padding: 7px 9px; }
+.ps-row.on { border-color: #1A5FD0; background: #EAF1FE; }
+.ps-audio {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  outline: 3px solid var(--signal);
+  outline-offset: 2px;
+  margin-top: 12px;
+}
+.ps-switch { width: 32px; height: 18px; border-radius: 999px; background: #1A5FD0; position: relative; flex: none; }
+.ps-switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.ps-pin {
+  position: absolute;
+  top: -15px;
+  left: -6px;
+  direction: rtl;
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--signal);
+  color: var(--signal-ink);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+/* A <label> wrapping a file input, dressed as the button it acts as. */
+.file-pick { display: flex; width: 100%; position: relative; }
+.file-pick:focus-within { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+.file-controls {
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.file-controls .btn { min-height: 44px; padding: 10px 16px; }
+.file-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A settings shelf that stays shut until wanted: the idle host sees at most
+   four decisions, not nine. */
+.drawer { padding: 0; }
+.drawer > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--muted);
+  border-radius: var(--r-panel);
+}
+.drawer > summary::-webkit-details-marker { display: none; }
+.drawer > summary::after {
+  content: "";
+  width: 8px; height: 8px;
+  border-inline-end: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: -4px;
+  transition: transform .25s var(--ease);
+}
+.drawer[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.drawer > summary:hover { color: var(--text); }
+.drawer > .tools { margin: 0; padding: 4px 20px 20px; border-top: 0; }
+
+@media (min-width: 960px) {
+  .room-shell.is-host { max-width: 1040px; }
+  .host-layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
+}
+
+/* ------------------------------------------------------------- the guest */
+
+.room-shell.is-guest .room-head { margin-bottom: 26px; }
+.room-shell.is-guest .code-plate { background: transparent; border-color: var(--line-soft); }
+.room-shell.is-guest .room-code { font-size: 14px; color: var(--muted); letter-spacing: .14em; }
+
+/* Act one: who is playing for you. The biggest words on the page. */
+.guest-hero { margin-bottom: 16px; display: grid; gap: 12px; }
+.guest-who {
+  font-size: clamp(24px, 6.6vw, 30px);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.guest-hero .now-playing { margin-top: 0; }
+.now-playing .np-label { color: var(--signal); }
+
+.guest-main { display: grid; gap: 16px; }
+.guest-main .volume-row,
+.guest-main .reactions,
+.guest-main .note-stacked { margin-top: 0; }
+
+/* Where the browser will not let us read the level, the mark stands in for
+   the meter rather than a flat row of bars that would say "no sound". */
+.glyph-live svg { width: 74px; height: 74px; display: block; }
+.stage[data-state="live"][data-meter="off"] .glyph-live { opacity: 1; transform: none; }
+.stage[data-meter="off"] .meter { display: none; }
+
+/* The first tap, and the one real choice a guest makes. */
+.listen-gate { display: grid; gap: 14px; }
+.mode-choice { display: grid; gap: 10px; }
+.mode {
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  min-height: 64px;
+  background: var(--ink-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  transition: border-color .18s var(--ease), background-color .18s var(--ease), color .18s var(--ease);
+}
+.mode b { color: var(--text); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.mode b::before {
+  content: "";
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  flex: none;
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.mode span { font-size: 13px; line-height: 1.65; }
+.mode[aria-checked="true"] {
+  border-color: color-mix(in srgb, var(--signal) 55%, transparent);
+  background: color-mix(in srgb, var(--signal) 6%, var(--ink-2));
+}
+.mode[aria-checked="true"] b::before { border-color: var(--signal); box-shadow: inset 0 0 0 3px var(--ink-2), inset 0 0 0 8px var(--signal); }
+/* Violet is the relay: the sound comes back through a second voice, ours. */
+#modeRelay[aria-checked="true"] { border-color: color-mix(in srgb, var(--voice-2) 60%, transparent); background: color-mix(in srgb, var(--voice-2) 7%, var(--ink-2)); }
+#modeRelay[aria-checked="true"] b::before { border-color: var(--voice-2); box-shadow: inset 0 0 0 3px var(--ink-2), inset 0 0 0 8px var(--voice-2); }
+.mode:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Which path the sound is on — and the switch to the other one. */
+.path-chip {
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 6px 12px;
+  min-height: 32px;
+  background: transparent;
+  color: var(--signal);
+  border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent);
+}
+.path-chip[data-path="relay"] { color: var(--voice-2); border-color: color-mix(in srgb, var(--voice-2) 40%, transparent); }
+.path-chip:not(:empty)::after { content: " · عوض کن"; color: var(--faint); }
+.path-chip:empty { display: none; }
+
+.reactions { align-items: center; }
+.reaction:disabled { opacity: .35; cursor: not-allowed; }
+.reaction-more { color: var(--faint); background: transparent; }
+.reactions-more { display: contents; }
+.reactions-more[hidden] { display: none; }
+
+.drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drawer-actions .btn { min-height: 48px; padding: 10px 12px; font-size: 14px; }
+
+/* Act three: the end of a listen, and what the guest keeps. */
+.end-card {
+  margin-top: 14px;
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 26px 20px 22px;
+  animation: rise .4s var(--ease);
+}
+.end-mark { width: 52px; height: 52px; }
+.end-duration {
+  font-size: 13px;
+  color: var(--signal);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.end-title { font-size: 20px; font-weight: 800; line-height: 1.5; text-wrap: balance; max-width: 26ch; }
+.end-sub { color: var(--muted); font-size: 13.5px; max-width: 36ch; }
+.end-card .stack { width: 100%; margin-top: 8px; }
+
+/* ------------------------------------------------------------- car mode */
+
+.car-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ink);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: max(24px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
+}
+.car-mode[hidden] { display: none; }
+.car-title { font-size: clamp(24px, 6vw, 40px); font-weight: 800; line-height: 1.35; }
+.car-state { font-size: clamp(16px, 3.6vw, 22px); font-weight: 700; margin-top: 8px; color: var(--st-wait); }
+.car-state[data-tone="live"] { color: var(--st-live); }
+.car-state[data-tone="connect"] { color: var(--st-connect); }
+.car-state[data-tone="alert"] { color: var(--st-alert); }
+.car-state[data-tone="idle"] { color: var(--st-idle); }
+.car-play {
+  width: clamp(96px, 28vw, 148px);
+  height: clamp(96px, 28vw, 148px);
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background: var(--signal);
+  color: var(--signal-ink);
+  display: grid;
+  place-items: center;
+}
+.car-play svg { width: 42%; height: 42%; fill: currentColor; }
+.car-play .car-resume { display: none; }
+.car-play[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 2px var(--line-strong); }
+.car-play[aria-pressed="true"] .car-pause { display: none; }
+.car-play[aria-pressed="true"] .car-resume { display: inline; }
+.car-exit {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+@media (max-width: 520px) and (orientation: portrait) {
+  .car-mode { grid-template-columns: 1fr; justify-items: center; text-align: center; align-content: center; }
 }

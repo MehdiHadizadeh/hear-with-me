@@ -63,10 +63,15 @@ export function createRoster({ ui, api, notices }) {
       name.appendChild(tag);
     }
 
+    // Every row has the same two buttons; their accessible names say whose
+    // they are, or a screen reader hears ten identical "remove"s.
+    const label = member.name || `مهمان ${faDigits(index + 1)}`;
+
     const promote = document.createElement('button');
     promote.type = 'button';
     promote.className = 'link-btn';
     promote.textContent = 'میزبان کن';
+    promote.setAttribute('aria-label', `${label} رو میزبان کن`);
     promote.addEventListener('click', () => api.makeHost(member.id));
 
     // Two taps rather than a confirm dialog: the second tap is the decision,
@@ -75,11 +80,17 @@ export function createRoster({ ui, api, notices }) {
     kick.type = 'button';
     kick.className = 'link-btn danger';
     kick.textContent = 'حذف';
+    kick.setAttribute('aria-label', `حذف ${label}`);
     let armed = null;
     kick.addEventListener('click', () => {
       if (!armed) {
         kick.textContent = 'مطمئنی؟';
-        armed = setTimeout(() => { armed = null; kick.textContent = 'حذف'; }, KICK_CONFIRM_MS);
+        kick.setAttribute('aria-label', `برای حذف ${label} دوباره بزن`);
+        armed = setTimeout(() => {
+          armed = null;
+          kick.textContent = 'حذف';
+          kick.setAttribute('aria-label', `حذف ${label}`);
+        }, KICK_CONFIRM_MS);
         return;
       }
       clearTimeout(armed);

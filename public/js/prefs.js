@@ -9,6 +9,7 @@ const KEYS = {
   receiveCap: 'hwm-receive-cap',
   wakeLock: 'hwm-wakelock',
   name: 'hwm-name',
+  listenMode: 'hwm-listen-mode',
 };
 
 function read(key, fallback) {
@@ -47,4 +48,12 @@ export const prefs = {
   // room they open on this device.
   name: () => read(KEYS.name, ''),
   setName: (value) => write(KEYS.name, value),
+
+  // "relay" (screen-off) or "direct", once the person has chosen; null means
+  // they never did and the device's default applies.
+  listenMode: () => {
+    const stored = read(KEYS.listenMode, '');
+    return stored === 'relay' || stored === 'direct' ? stored : null;
+  },
+  setListenMode: (value) => write(KEYS.listenMode, value),
 };

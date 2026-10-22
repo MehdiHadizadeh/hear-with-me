@@ -62,6 +62,12 @@ export function createNotices(ui) {
     el.appendChild(body);
 
     ui.toasts.appendChild(el);
+    // Something the host has to act on interrupts a screen reader; a heart
+    // does not. The toast layer itself is the polite region.
+    if (options.alert && ui.alertLive) {
+      ui.alertLive.textContent = '';
+      ui.alertLive.textContent = `${options.who ? `${options.who} ` : ''}${text}`;
+    }
     const life = options.todo ? TOAST_ACTIONABLE_LIFE_MS : TOAST_LIFE_MS;
     setTimeout(() => el.classList.add('leaving'), life);
     setTimeout(() => el.remove(), life + TOAST_FADE_MS);
