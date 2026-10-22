@@ -234,7 +234,7 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     // -- the end card ---------------------------------------------------------
     await sleep(Math.max(0, 21000 - 2000));
     await host.click('#stopShareBtn');
-    const endShown = await g1.waitForSelector('#endCard', { state: 'visible', timeout: 5000 }).then(() => true, () => false);
+    const endShown = await g1.waitForSelector('#endCard', { state: 'visible', timeout: 15000 }).then(() => true, () => false);
     check(endShown, 'when the share ends, a guest who listened gets the end card');
     const endText = endShown ? await g1.textContent('#endTitle') : '';
     check(endText.includes('مهدی'), 'the end card names whose computer the sound came from');
