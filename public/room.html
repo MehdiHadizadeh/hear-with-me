@@ -138,7 +138,7 @@
             </div>
 
             <div class="now-playing now-playing--field">
-              <label class="np-label" for="nowPlayingInput">الان چی پخش می‌شه؟ (اختیاری، مهمان‌ها می‌بینن)</label>
+              <label class="np-label" for="nowPlayingInput">اسم آهنگ <span class="np-optional">· اختیاری، بالای صفحه‌ی مهمان‌ها میاد</span></label>
               <div class="row">
                 <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead · Weird Fishes" />
                 <button class="btn btn-secondary" id="nowPlayingBtn">ثبت</button>
@@ -148,8 +148,10 @@
         </div>
 
         <!-- Rehearsed before the browser's own picker covers the page: the one
-             switch that decides whether anyone hears anything. -->
-        <div class="rehearsal" id="hostRehearsal">
+             switch that decides whether anyone hears anything. Open the first
+             time; after that it waits behind its summary. -->
+        <details class="rehearsal" id="hostRehearsal" open>
+          <summary>قبل از شروع: کلید صدا رو یادت نره</summary>
           <ol class="steps">
             <li><span><b>تبی که آهنگ توشه</b> رو انتخاب کن. برای صدای یه اپ، «<span class="ltr">Entire screen</span>» رو بزن.</span></li>
             <li><span><b>کلید صدا رو روشن کن.</b> اسمش <span class="ltr">Also share tab audio</span> یا <span class="ltr">Share system audio</span>ه.</span></li>
@@ -162,7 +164,7 @@
             <div class="ps-row ltr">Inbox</div>
             <div class="ps-audio"><span class="ltr">Also share tab audio</span><span class="ps-switch"></span><span class="ps-pin">اینو روشن کن</span></div>
           </figure>
-        </div>
+        </details>
 
         <div class="stack" id="hostActions">
           <button class="btn btn-primary" id="startShareBtn">شروع پخش صدا</button>
@@ -312,18 +314,30 @@
         <p class="note note-stacked" id="backgroundHint" style="display:none;"></p>
 
         <!-- The audio path is one-way by design, so this is the whole of the
-             listener's voice. Four in reach of a thumb; the rest one tap
-             away. Off until there is something to react to. -->
-        <div class="reactions" id="reactionRow">
-          <button class="reaction" type="button" data-kind="love" aria-label="دوستش دارم">❤️</button>
-          <button class="reaction" type="button" data-kind="fire" aria-label="عالیه">🔥</button>
-          <button class="reaction" type="button" data-kind="whatsthis">این چیه؟</button>
-          <button class="reaction" type="button" data-kind="nosound">صدا نمیاد</button>
-          <button class="reaction reaction-more" type="button" id="moreReactionsBtn" aria-expanded="false" aria-controls="moreReactions">بیشتر</button>
-          <span class="reactions-more" id="moreReactions" hidden>
-            <button class="reaction" type="button" data-kind="quiet">صدای منبع ضعیفه</button>
-            <button class="reaction" type="button" data-kind="broken">بریده‌بریده</button>
-          </span>
+             listener's voice: four cheers a thumb can reach, one question,
+             and the three things that can go wrong behind one button — a
+             wall of six equal chips made "no sound" as casual as a heart.
+             Off until there is something to react to. -->
+        <div class="react-bar" id="reactionRow" role="group" aria-label="واکنش به چیزی که پخش می‌شه">
+          <div class="cheers">
+            <button class="reaction cheer" type="button" data-kind="love" aria-label="دوستش دارم">❤️</button>
+            <button class="reaction cheer" type="button" data-kind="fire" aria-label="عالیه">🔥</button>
+            <button class="reaction cheer" type="button" data-kind="clap" aria-label="دمش گرم">👏</button>
+            <button class="reaction cheer" type="button" data-kind="wow" aria-label="عاشقشم">😍</button>
+          </div>
+          <div class="asks">
+            <button class="reaction ask" type="button" data-kind="whatsthis">این آهنگ چیه؟</button>
+            <button class="reaction ask problem-toggle" type="button" id="moreReactionsBtn" aria-expanded="false" aria-controls="moreReactions">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="M16 10l5 5m0-5-5 5"/></svg>
+              مشکل صدا
+            </button>
+          </div>
+          <div class="problems" id="moreReactions" hidden>
+            <p class="problems-title">به میزبان بگو چی شده:</p>
+            <button class="reaction problem" type="button" data-kind="nosound">صدا نمیاد</button>
+            <button class="reaction problem" type="button" data-kind="broken">بریده‌بریده می‌رسه</button>
+            <button class="reaction problem" type="button" data-kind="quiet">صدای منبع ضعیفه</button>
+          </div>
         </div>
       </div>
 
@@ -334,12 +348,12 @@
           <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="#8C7CFF"/>
         </svg>
         <p class="end-duration" id="endDuration"></p>
-        <h2 class="end-title" id="endTitle">این صدا از کامپیوتر یه نفر می‌اومد. تو هم می‌تونی.</h2>
-        <p class="end-sub">از کامپیوترت هرچی گوش می‌دی رو برای یکی دیگه پخش کن؛ یا همین الان از گوشیت، یه فایل.</p>
+        <h2 class="end-title" id="endTitle">تو هم می‌تونی برای یکی پخش کنی.</h2>
+        <p class="end-sub" id="endSub"></p>
         <div class="stack">
           <button class="btn btn-primary" id="sendToSelfBtn" type="button">لینک رو برای کامپیوترم بفرست</button>
-          <button class="btn btn-secondary" id="storyBtn" type="button">کارت استوری</button>
-          <a class="btn btn-ghost btn-link" href="/" id="hostFromPhoneLink">ساخت اتاق خودم</a>
+          <a class="btn btn-secondary btn-link" href="/" id="hostFromPhoneLink">ساخت اتاق خودم</a>
+          <button class="btn btn-ghost" id="storyBtn" type="button">کارت استوری</button>
         </div>
       </section>
 

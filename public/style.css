@@ -555,27 +555,17 @@ input[type="text"].code-input {
 
 /* ------------------------------------------------------------- reactions */
 
-/* The listener cannot talk back over the audio path — it is one-way by
-   design — so this row is the whole of their voice. */
-.reactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
 .reaction {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
   padding: 10px 15px;
-  min-height: 46px;
-  /* The two single-glyph ones would otherwise sit under the touch floor the
-     rest of this row keeps. */
-  min-width: 46px;
+  min-height: 48px;
+  min-width: 48px;
   transition: color .18s var(--ease), border-color .18s var(--ease), transform .12s var(--ease);
 }
 .reaction:hover { color: var(--text); }
@@ -592,18 +582,34 @@ input[type="text"].code-input {
 .burst {
   position: absolute;
   inset-inline: 0;
-  bottom: 12px;
+  /* Just under the meter: cheers rise over the sound itself, and never under
+     the host's fields further down the stage. */
+  top: 112px;
   height: 0;
   pointer-events: none;
   text-align: center;
+  z-index: 5;
 }
-.burst span {
+.burst-item {
   position: absolute;
   inset-inline-start: 50%;
   bottom: 0;
-  font-size: 26px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   line-height: 1;
   animation: cheer 2.4s var(--ease) forwards;
+}
+.burst-emoji { font-size: 30px; }
+.burst-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 @keyframes cheer {
   0% { opacity: 0; transform: translate(-50%, 0) scale(.6); }
@@ -1105,12 +1111,32 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
 .field { display: grid; gap: 8px; }
 .field .tool-hint { margin-top: 0; }
 
-/* Rehearsing the one switch before the browser's picker covers the page. */
-.rehearsal {
-  display: grid;
-  gap: 14px;
-  margin-top: 18px;
+/* Rehearsing the one switch before the browser's picker covers the page.
+   Open the first time, a single line after that. */
+.rehearsal { margin-top: 18px; }
+.rehearsal[open] { display: grid; gap: 14px; }
+.rehearsal > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
 }
+.rehearsal > summary::-webkit-details-marker { display: none; }
+.rehearsal > summary::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .25s var(--ease);
+}
+.rehearsal[open] > summary::before { transform: rotate(45deg); }
+.rehearsal > summary:hover { color: var(--text); }
 .steps {
   margin: 0;
   padding: 0;
@@ -1143,14 +1169,16 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
 }
 .steps b { color: var(--text); font-weight: 600; }
 
-/* A drawing of Chrome's own picker, in Chrome's own light palette, so it is
-   recognised the moment the real one opens. Only the outline is ours. */
+/* A drawing of Chrome's own picker, in Chrome's own dark palette: close
+   enough to be recognised the moment the real one opens, and not a white
+   slab in a page that is dark everywhere else. Only the outline is ours. */
 .picker-sketch {
   margin: 0;
   direction: ltr;
   text-align: left;
-  background: #F3F4F7;
-  color: #1C2030;
+  background: #292A2D;
+  color: #E8EAED;
+  border: 1px solid #3C4043;
   border-radius: 12px;
   padding: 12px;
   display: grid;
@@ -1159,25 +1187,25 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
   font-size: 12px;
 }
 .ps-head { font-weight: 600; font-size: 12.5px; }
-.ps-tabs { display: flex; gap: 12px; color: #5B6275; border-bottom: 1px solid #D6D9E2; padding-bottom: 6px; }
-.ps-tabs .on { color: #1A5FD0; box-shadow: 0 2px 0 #1A5FD0; }
-.ps-row { background: #fff; border: 1px solid #D6D9E2; border-radius: 7px; padding: 7px 9px; }
-.ps-row.on { border-color: #1A5FD0; background: #EAF1FE; }
+.ps-tabs { display: flex; gap: 12px; color: #9AA0A6; border-bottom: 1px solid #3C4043; padding-bottom: 6px; }
+.ps-tabs .on { color: #8AB4F8; box-shadow: 0 2px 0 #8AB4F8; }
+.ps-row { background: #35363A; border: 1px solid #3C4043; border-radius: 7px; padding: 7px 9px; color: #BDC1C6; }
+.ps-row.on { border-color: #8AB4F8; background: #394457; color: #E8EAED; }
 .ps-audio {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #fff;
+  background: #35363A;
   border-radius: 8px;
   padding: 8px 10px;
   outline: 3px solid var(--signal);
   outline-offset: 2px;
   margin-top: 12px;
 }
-.ps-switch { width: 32px; height: 18px; border-radius: 999px; background: #1A5FD0; position: relative; flex: none; }
-.ps-switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.ps-switch { width: 32px; height: 18px; border-radius: 999px; background: #8AB4F8; position: relative; flex: none; }
+.ps-switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: #202124; }
 .ps-pin {
   position: absolute;
   top: -15px;
@@ -1256,10 +1284,22 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
 }
 .guest-hero .now-playing { margin-top: 0; }
 .now-playing .np-label { color: var(--signal); }
+.np-optional { color: var(--faint); font-weight: 500; }
+#guestNowPlaying { display: flex; align-items: center; gap: 10px; }
+.np-note {
+  flex: none;
+  width: 20px; height: 20px;
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.np-title { min-width: 0; }
 
 .guest-main { display: grid; gap: 16px; }
 .guest-main .volume-row,
-.guest-main .reactions,
+.guest-main .react-bar,
 .guest-main .note-stacked { margin-top: 0; }
 
 /* Where the browser will not let us read the level, the mark stands in for
@@ -1321,13 +1361,66 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
 .path-chip:not(:empty)::after { content: " · عوض کن"; color: var(--faint); }
 .path-chip:empty { display: none; }
 
-.reactions { align-items: center; }
+/* The listener's whole voice. Cheers are big, round and quick; the question
+   and the problem button are words; problems wait behind their button. */
+.react-bar { display: grid; gap: 10px; }
+.cheers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.reaction.cheer {
+  font-size: 24px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+}
+.reaction.cheer:hover:not(:disabled) { border-color: var(--line-strong); background: var(--panel-3); }
+.asks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.reaction.ask {
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.reaction.ask svg { width: 18px; height: 18px; flex: none; }
+.problem-toggle[aria-expanded="true"] {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--st-alert) 40%, transparent);
+  background: color-mix(in srgb, var(--st-alert) 8%, var(--panel-2));
+}
+.problems {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--st-alert) 25%, transparent);
+  background: color-mix(in srgb, var(--st-alert) 5%, var(--ink-2));
+  animation: rise .25s var(--ease);
+}
+.problems[hidden] { display: none; }
+.problems-title { font-size: 12.5px; color: var(--muted); }
+.reaction.problem { border-radius: 12px; text-align: start; padding-inline: 16px; }
 .reaction:disabled { opacity: .35; cursor: not-allowed; }
+.reaction.sent { animation: pop .45s var(--ease); }
+@keyframes pop { 40% { transform: scale(1.18); } }
 /* After the share ends there is nothing left to react to. */
-#guestCard:has(.stage[data-state="stopped"]) .reactions { display: none; }
-.reaction-more { color: var(--faint); background: transparent; }
-.reactions-more { display: contents; }
-.reactions-more[hidden] { display: none; }
+#guestCard:has(.stage[data-state="stopped"]) .react-bar { display: none; }
+
+/* On a phone, while live, the bar rides at the bottom of the screen where a
+   thumb already is — a layer over the page, so it gets the toast's shadow. */
+@media (pointer: coarse) {
+  #guestCard:has(.stage[data-state="live"]) .react-bar:not(:has(.problems:not([hidden]))) {
+    position: sticky;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    z-index: 30;
+    padding: 10px;
+    margin-inline: -10px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .9);
+  }
+}
 
 .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .drawer-actions .btn { min-height: 48px; padding: 10px 12px; font-size: 14px; }

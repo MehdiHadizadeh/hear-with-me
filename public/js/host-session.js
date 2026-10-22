@@ -232,6 +232,7 @@ export function createHostSession({
   }
 
   function goLive() {
+    prefs.setSharedBefore();
     setStage(ui.hostStage, 'live');
     ui.hostTitle.textContent = 'زنده — داری پخش می‌کنی';
     ui.hostStatus.textContent = 'هرکی لینک رو باز کنه، همین الان می‌شنوه.';
@@ -461,6 +462,10 @@ export function createHostSession({
 
     for (const [guestId, pc] of peers) quality.applyTo(pc, guestId);
   });
+
+  // The rehearsal opens by itself the first time; after a share has worked
+  // once, it waits behind its summary line.
+  ui.hostRehearsal.open = !prefs.sharedBefore();
 
   // A phone can only play a file of its own into the room; say so plainly
   // instead of offering a button that fails after a permission prompt.

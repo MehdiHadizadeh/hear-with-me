@@ -405,10 +405,20 @@ export function createGuestSession({
   function renderNowPlaying(text) {
     ui.guestNowPlaying.textContent = '';
     if (text) {
-      const label = document.createElement('span');
-      label.className = 'np-label';
-      label.textContent = 'الان';
-      ui.guestNowPlaying.append(label, document.createTextNode(text));
+      // A note, not a word: "now" above a track name read as a label for
+      // nothing. The accessible text says what it is.
+      const note = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      note.setAttribute('viewBox', '0 0 24 24');
+      note.setAttribute('aria-hidden', 'true');
+      note.setAttribute('class', 'np-note');
+      note.innerHTML = '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>';
+      const hidden = document.createElement('span');
+      hidden.className = 'sr-only';
+      hidden.textContent = 'در حال پخش: ';
+      const title = document.createElement('span');
+      title.className = 'np-title';
+      title.textContent = text;
+      ui.guestNowPlaying.append(note, hidden, title);
     }
     show(ui.guestNowPlaying, !!text);
     publishMediaSession(text);
@@ -418,11 +428,15 @@ export function createGuestSession({
   let whoState = 'waiting';
   function renderWho(state = whoState) {
     whoState = state;
-    const name = hostName || 'یکی';
-    ui.guestWho.textContent = {
-      live: `${name} داره برات پخش می‌کنه`,
-      waiting: `${name} هنوز پخش رو شروع نکرده`,
-      ended: `${name} پخش رو تموم کرد`,
+    // Without a name, "someone finished" reads like gossip; say what happened.
+    ui.guestWho.textContent = hostName ? {
+      live: `${hostName} داره برات پخش می‌کنه`,
+      waiting: `${hostName} هنوز پخش رو شروع نکرده`,
+      ended: `${hostName} پخش رو تموم کرد`,
+    }[state] : {
+      live: 'یه نفر داره برات پخش می‌کنه',
+      waiting: 'منتظر شروع پخش',
+      ended: 'پخش تموم شد',
     }[state];
   }
 
@@ -549,7 +563,8 @@ export function createGuestSession({
     setHostName(name) {
       hostName = name || '';
       renderWho();
-      publishMediaSession(ui.guestNowPlaying.textContent.replace(/^الان/, ''));
+      const title = ui.guestNowPlaying.querySelector('.np-title');
+      publishMediaSession(title ? title.textContent : '');
     },
 
     handleAnswer(sdp) {

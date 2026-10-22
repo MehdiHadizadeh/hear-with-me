@@ -13,6 +13,7 @@ const TOAST_ACTIONABLE_LIFE_MS = 9000; // something to act on earns a longer loo
 const TOAST_FADE_MS = 400;
 const BURST_LIFE_MS = 2400;
 const BURST_SPREAD_PX = 90; // so three hearts in a row don't stack into one
+const BURST_COMBO_MS = 2500;
 
 export function createNotices(ui) {
   let noticeTimer = null;
@@ -73,10 +74,30 @@ export function createNotices(ui) {
     setTimeout(() => el.remove(), life + TOAST_FADE_MS);
   }
 
-  function showBurst(emoji, layer) {
+  // The same cheer arriving again within a moment counts up instead of
+  // stacking into an unreadable pile: "🔥 ×3".
+  let lastBurst = { emoji: '', at: 0, count: 0 };
+
+  function showBurst(emoji, layer, who = '') {
     if (!layer) return;
+    const now = Date.now();
+    lastBurst = lastBurst.emoji === emoji && now - lastBurst.at < BURST_COMBO_MS
+      ? { emoji, at: now, count: lastBurst.count + 1 }
+      : { emoji, at: now, count: 1 };
+
     const el = document.createElement('span');
-    el.textContent = emoji;
+    el.className = 'burst-item';
+    const glyph = document.createElement('span');
+    glyph.className = 'burst-emoji';
+    glyph.textContent = emoji;
+    el.appendChild(glyph);
+    if (lastBurst.count > 1 || who) {
+      const tag = document.createElement('span');
+      tag.className = 'burst-tag';
+      // A name a guest typed: never as markup.
+      tag.textContent = [who, lastBurst.count > 1 ? `×${lastBurst.count.toLocaleString('fa-IR')}` : ''].filter(Boolean).join(' ');
+      el.appendChild(tag);
+    }
     el.style.setProperty('--x', `${Math.round((Math.random() - 0.5) * BURST_SPREAD_PX)}px`);
     layer.appendChild(el);
     setTimeout(() => el.remove(), BURST_LIFE_MS);

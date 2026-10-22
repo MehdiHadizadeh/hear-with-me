@@ -19,7 +19,7 @@ export function roomPreview(info) {
     return {
       title: `${who} داره زنده پخش می‌کنه`,
       description: info.nowPlaying
-        ? `الان: ${info.nowPlaying} · بزن و همون لحظه بشنو`
+        ? `در حال پخش: ${info.nowPlaying} · بزن و همون لحظه بشنو`
         : 'بزن و همون لحظه همون صدا رو بشنو. بدون نصب، بدون حساب.',
     };
   }

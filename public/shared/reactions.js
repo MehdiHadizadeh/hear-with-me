@@ -27,10 +27,20 @@ export const REACTIONS = {
     text: 'عالیه',
     cheer: true,
   },
+  clap: {
+    emoji: '👏',
+    text: 'دمت گرم',
+    cheer: true,
+  },
+  wow: {
+    emoji: '😍',
+    text: 'عاشقشه',
+    cheer: true,
+  },
   whatsthis: {
     emoji: '❓',
     text: 'می‌پرسه این آهنگ چیه',
-    todo: 'پایین همین صفحه، تو کادر «داری چی گوش می‌دی؟» بنویسش.',
+    todo: 'تو کادر «اسم آهنگ» بنویسش؛ بالای صفحه‌ی همه میاد.',
   },
   quiet: {
     emoji: '🔈',

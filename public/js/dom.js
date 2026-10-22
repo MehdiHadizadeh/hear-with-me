@@ -100,6 +100,8 @@ export const ui = Object.freeze({
   endCard: byId('endCard'),
   endDuration: byId('endDuration'),
   endTitle: byId('endTitle'),
+  endSub: byId('endSub'),
+  hostFromPhoneLink: byId('hostFromPhoneLink'),
   sendToSelfBtn: byId('sendToSelfBtn'),
   storyBtn: byId('storyBtn'),
   nameInput: byId('nameInput'),

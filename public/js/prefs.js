@@ -10,6 +10,7 @@ const KEYS = {
   wakeLock: 'hwm-wakelock',
   name: 'hwm-name',
   listenMode: 'hwm-listen-mode',
+  sharedBefore: 'hwm-shared-before',
 };
 
 function read(key, fallback) {
@@ -56,4 +57,9 @@ export const prefs = {
     return stored === 'relay' || stored === 'direct' ? stored : null;
   },
   setListenMode: (value) => write(KEYS.listenMode, value),
+
+  // Whether a share from this browser has ever been heard: the host's
+  // rehearsal of Chrome's picker stops opening by itself after that.
+  sharedBefore: () => read(KEYS.sharedBefore, '') === '1',
+  setSharedBefore: () => write(KEYS.sharedBefore, '1'),
 };

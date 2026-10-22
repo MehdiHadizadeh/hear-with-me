@@ -91,7 +91,6 @@ let isHost = false;
 let sharingNow = false;
 let terminated = false;
 let hostName = '';
-let shareSource = null; // what the current share is playing from
 
 // ---------------------------------------------------------------------------
 // Which half of the room we are
@@ -149,16 +148,21 @@ ui.reactionRow.addEventListener('click', (e) => {
   }
   lastReactionSent = Date.now();
   api.react(button.dataset.kind);
+  // A tap you can feel, on the phones that allow it.
+  try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* not allowed */ }
+  button.classList.remove('sent');
+  void button.offsetWidth; // restart the pop when tapped again
   button.classList.add('sent');
   setTimeout(() => button.classList.remove('sent'), 600);
+  // A problem is reported once; the panel has done its job.
+  if (button.classList.contains('problem')) setProblemsOpen(false);
 });
 
-ui.moreReactionsBtn.addEventListener('click', () => {
-  const opening = ui.moreReactions.hidden;
-  ui.moreReactions.hidden = !opening;
-  ui.moreReactionsBtn.setAttribute('aria-expanded', String(opening));
-  ui.moreReactionsBtn.textContent = opening ? 'کمتر' : 'بیشتر';
-});
+function setProblemsOpen(open) {
+  ui.moreReactions.hidden = !open;
+  ui.moreReactionsBtn.setAttribute('aria-expanded', String(open));
+}
+ui.moreReactionsBtn.addEventListener('click', () => setProblemsOpen(ui.moreReactions.hidden));
 
 // ---------------------------------------------------------------------------
 // Ending the room, from any of the ways it can end
@@ -226,7 +230,6 @@ events.on('welcome', (data) => {
   if (ui.nameInput.value) api.setName(ui.nameInput.value); // we already know what to call ourselves
   guest.renderNowPlaying(data.nowPlaying);
   guest.applyShare({ relayFormat: data.relayFormat });
-  shareSource = data.shareSource;
 
   if (!data.isSharing) { guest.waitForHost(); return; }
   // Late joiners pick the timer up mid-session rather than from zero.
@@ -240,7 +243,6 @@ events.on('sharing-started', (data) => {
   endCard.hide();
   guest.renderNowPlaying('');
   guest.applyShare({ relayFormat: data.relayFormat });
-  shareSource = data.shareSource;
   guestTimer.start(0);
   guest.startListening();
 });
@@ -249,7 +251,7 @@ events.on('sharing-stopped', () => {
   sharingNow = false;
   if (isHost) return;
   const listened = guest.handleSharingStopped();
-  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName, shareSource);
+  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName);
 });
 
 events.on('now-playing', ({ text }) => {
@@ -291,10 +293,10 @@ events.on('reaction', ({ from, kind }) => {
   if (from === identity.clientId) {
     // Your own reaction only has to confirm it left.
     if (reaction.cheer) notices.showBurst(reaction.emoji, layer);
-    else notices.showToast('فرستاده شد ✔');
+    else notices.showToast('به میزبان گفتیم ✔');
     return;
   }
-  if (reaction.cheer) { notices.showBurst(reaction.emoji, layer); return; }
+  if (reaction.cheer) { notices.showBurst(reaction.emoji, layer, isHost ? roster.labelFor(from) : ''); return; }
 
   notices.showToast(reaction.text, {
     who: roster.labelFor(from),

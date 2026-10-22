@@ -8,6 +8,7 @@
 // asking for something they cannot do right now.
 
 import { show } from './dom.js';
+import { canCaptureSystemAudio, isTouchDevice } from './platform.js';
 import { formatClock } from './format.js';
 import { report } from './metrics.js';
 
@@ -115,7 +116,10 @@ export function createEndCard({ ui, notices }) {
     canvas.toBlob(async (blob) => {
       if (!blob) return;
       const file = new File([blob], 'hear-with-me.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // On a phone the share sheet is where a story goes. On a computer it
+      // opened the OS's own share dialog for a picture nobody meant to send
+      // anywhere yet, so a computer just saves it.
+      if (isTouchDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
         try { await navigator.share({ files: [file] }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
       }
       const link = document.createElement('a');
@@ -131,14 +135,27 @@ export function createEndCard({ ui, notices }) {
   return {
     // Only worth showing after a real listen: a guest who heard nothing has
     // nothing to remember.
-    show(ms, hostName, source) {
+    show(ms, hostName) {
       listenedMs = ms;
       ui.endDuration.textContent = `${formatClock(ms)} با هم شنیدید`;
-      // A file played from a phone is not "from someone's computer".
-      const device = source === 'file' ? 'گوشی' : 'کامپیوتر';
+      // Says what this person can do next from where they are sitting — not
+      // where the host was, which the page never really knows.
       ui.endTitle.textContent = hostName
-        ? `این صدا از ${device} ${hostName} می‌اومد. تو هم می‌تونی.`
-        : `این صدا از ${device} یه نفر می‌اومد. تو هم می‌تونی.`;
+        ? `این رو ${hostName} برات پخش می‌کرد. تو هم می‌تونی برای یکی پخش کنی.`
+        : 'تو هم می‌تونی برای یکی پخش کنی.';
+      if (canCaptureSystemAudio) {
+        ui.endSub.textContent = 'هرچی روی همین کامپیوتر گوش می‌دی، با یه لینک برای هرکی بخوای.';
+        show(ui.sendToSelfBtn, false);
+        ui.hostFromPhoneLink.className = 'btn btn-primary btn-link';
+        ui.hostFromPhoneLink.textContent = 'ساخت اتاق خودم';
+        ui.storyBtn.textContent = 'ذخیره‌ی کارت استوری';
+      } else {
+        ui.endSub.textContent = 'روی کامپیوترت هرچی گوش می‌دی رو پخش کن، یا همین الان از گوشیت یه فایل.';
+        show(ui.sendToSelfBtn, true, 'flex');
+        ui.hostFromPhoneLink.className = 'btn btn-secondary btn-link';
+        ui.hostFromPhoneLink.textContent = 'پخش یه فایل از گوشیم';
+        ui.storyBtn.textContent = 'کارت استوری';
+      }
       show(ui.endCard, true);
     },
     hide() { show(ui.endCard, false); },
