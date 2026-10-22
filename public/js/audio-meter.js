@@ -53,6 +53,7 @@ export function createLevelMeter(container, barCount = 32) {
   let analyser = null;
   let data = null;
   let frame = null;
+  let fedLevel = null; // a level from outside (the Android app's capture), 0..1
 
   function draw() {
     frame = requestAnimationFrame(draw);
@@ -91,8 +92,19 @@ export function createLevelMeter(container, barCount = 32) {
     // The loudest sample right now, 0..1. Read directly rather than from the
     // drawing loop, because animation frames stop on a hidden tab and the
     // host's tab is usually hidden behind the music.
+    // The app's native capture reports one real level, not a spectrum. The
+    // bars then all follow that level — honest about loudness, and making no
+    // claim about frequencies nobody measured.
+    feed(level) {
+      if (analyser) return;
+      fedLevel = Math.max(0, Math.min(1, level));
+      container.classList.toggle('idle', fedLevel === 0);
+      const shown = Math.max(FLOOR, Math.min(1, fedLevel * 1.8));
+      for (const bar of bars) bar.style.transform = `scaleY(${shown})`;
+    },
+
     level() {
-      if (!analyser) return 0;
+      if (!analyser) return fedLevel || 0;
       const wave = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(wave);
       let peak = 0;
@@ -105,6 +117,7 @@ export function createLevelMeter(container, barCount = 32) {
       if (source) { try { source.disconnect(); } catch (e) { /* already gone */ } source = null; }
       analyser = null;
       data = null;
+      fedLevel = null;
       container.classList.add('idle');
       for (const bar of bars) bar.style.transform = `scaleY(${FLOOR})`;
     },

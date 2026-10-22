@@ -229,7 +229,7 @@ events.on('welcome', (data) => {
 
   if (ui.nameInput.value) api.setName(ui.nameInput.value); // we already know what to call ourselves
   guest.renderNowPlaying(data.nowPlaying);
-  guest.applyShare({ relayFormat: data.relayFormat });
+  guest.applyShare({ relayFormat: data.relayFormat, directAvailable: data.directAvailable });
 
   if (!data.isSharing) { guest.waitForHost(); return; }
   // Late joiners pick the timer up mid-session rather than from zero.
@@ -242,7 +242,7 @@ events.on('sharing-started', (data) => {
   if (isHost) return;
   endCard.hide();
   guest.renderNowPlaying('');
-  guest.applyShare({ relayFormat: data.relayFormat });
+  guest.applyShare({ relayFormat: data.relayFormat, directAvailable: data.directAvailable });
   guestTimer.start(0);
   guest.startListening();
 });

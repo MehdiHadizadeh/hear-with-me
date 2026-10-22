@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hear With Me</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; text-align: center;
+      background: #070910; color: #E9ECF5;
+      font-family: Vazirmatn, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+      padding: max(24px, env(safe-area-inset-top)) 24px;
+    }
+    main { max-width: 320px; display: grid; gap: 14px; justify-items: center; }
+    h1 { font-size: 20px; margin: 0; }
+    p { color: #9BA5C0; margin: 0; line-height: 1.8; font-size: 14px; }
+    button {
+      font: inherit; font-weight: 700; font-size: 16px; border: 0; border-radius: 12px;
+      background: #3FE0BE; color: #04140F; padding: 14px 28px; min-height: 52px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <svg width="56" height="56" viewBox="0 0 48 48" fill="none" stroke-width="4.6" stroke-linecap="round" aria-hidden="true">
+      <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="#3FE0BE"/>
+      <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="#8C7CFF"/>
+    </svg>
+    <h1>به اینترنت وصل نیستی</h1>
+    <p>Hear With Me برای وصل شدن به اتاق‌ها به اینترنت نیاز داره. وقتی وصل شدی، دوباره امتحان کن.</p>
+    <button type="button" onclick="location.href='https://hearwithme.ir/'">دوباره امتحان کن</button>
+  </main>
+</body>
+</html>

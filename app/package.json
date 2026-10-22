@@ -1,0 +1,19 @@
+{
+  "name": "hear-with-me-app",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Hear With Me for Android and iPhone: the web client in a native shell, plus what only a native app can do.",
+  "scripts": {
+    "sync": "cap sync",
+    "android": "cap sync android && cd android && ./gradlew assembleDebug",
+    "ios": "cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

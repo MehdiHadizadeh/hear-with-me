@@ -1,0 +1,140 @@
+name: Tests and app builds
+
+# One pipeline for all three outputs: the site's tests, the Android app (an
+# installable APK) and the iPhone app (an unsigned build). A version tag
+# (v1.2.3) also publishes them as a GitHub release.
+on:
+  push:
+    branches: [main, 'feature/**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Server and browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Room, QR, relay, preview and limit tests
+        run: npm test
+      - name: Browser tests (real WebRTC and the screen-off relay)
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          node test-e2e.js
+          node test-relay.js
+
+  android:
+    name: Android app
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx cap sync android
+      # Signed with the real key when the repository has it; otherwise with
+      # the public test key in app/android/keystores, which is fine for
+      # installing by hand and nothing else.
+      - name: Release key, if configured
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "HWM_KEYSTORE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          fi
+      - name: Build the APK
+        working-directory: app/android
+        env:
+          HWM_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          HWM_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          HWM_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk "../dist/HearWithMe-${GITHUB_RUN_NUMBER}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app/dist/*.apk
+          if-no-files-found: error
+
+  ios:
+    name: iPhone app
+    needs: test
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - run: npm ci
+      - run: npx cap sync ios
+      # Without an Apple developer account there is nothing to sign with, so
+      # this is an unsigned build: re-signed and installed with a tool like
+      # Sideloadly or AltStore using a free Apple ID. Signing for the App
+      # Store or TestFlight needs a paid account and is not set up here.
+      - name: Build for devices (unsigned)
+        working-directory: app/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          mkdir -p Payload ../../dist
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry "../../dist/HearWithMe-${GITHUB_RUN_NUMBER}-unsigned.ipa" Payload
+      - name: Build for the simulator
+        working-directory: app/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build-sim \
+            CODE_SIGNING_ALLOWED=NO build
+          cd build-sim/Build/Products/Debug-iphonesimulator
+          zip -qry "$GITHUB_WORKSPACE/app/dist/HearWithMe-${GITHUB_RUN_NUMBER}-simulator.zip" App.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: app/dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish a release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

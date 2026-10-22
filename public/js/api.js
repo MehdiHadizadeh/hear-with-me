@@ -22,6 +22,8 @@ export function createRoomApi(roomId, identity) {
   return {
     roomId,
     clientId,
+    // Only for the app's own native code, which posts to the relay itself.
+    nativeCredentials: () => ({ clientId, secret }),
 
     // The same endpoint, reached two ways. Which one is used is the server's
     // call, not ours — see js/room-events.js.

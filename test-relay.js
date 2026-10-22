@@ -107,6 +107,7 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     });
   }
   const browser = await chromium.launch({
+    ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
     args: [
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
@@ -158,7 +159,16 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
       const res = await fetch(src, { method: 'HEAD' });
       return res.headers.get('content-type');
     }).catch(() => null);
-    check(format === null || /audio\/aac/.test(format), `the stream is AAC, which iPhones play (${format})`);
+    // AAC wherever the host's browser can encode it (desktop Chrome and Edge);
+    // a browser build without that encoder (Chromium on Linux CI) falls back
+    // to WebM, and that fallback is what is checked there.
+    const canAac = await host.evaluate(async () => {
+      try {
+        return (await AudioEncoder.isConfigSupported({ codec: 'mp4a.40.2', sampleRate: 48000, numberOfChannels: 2, bitrate: 128000, aac: { format: 'adts' } })).supported;
+      } catch (e) { return false; }
+    });
+    check(format === null || (canAac ? /audio\/aac/.test(format) : /audio\/webm/.test(format)),
+      `the stream is ${canAac ? 'AAC, which iPhones play' : 'the WebM fallback (this browser cannot encode AAC)'} (${format})`);
 
     // -- a direct connection that never comes up falls back to the relay ---
     const neverConnects = () => {

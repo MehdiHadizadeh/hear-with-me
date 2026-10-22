@@ -222,6 +222,33 @@ async function testRelayHttp() {
   guest.req.destroy();
 }
 
+// The Android app hosts through the relay alone: guests must be told there is
+// no direct path, and "direct only" cannot be left on, or nobody hears.
+async function testRelayOnlyHost() {
+  console.log('\nrelay-only host (the Android app)');
+  const { json: { roomId } } = await request('POST', '/api/rooms');
+  const host = join(roomId, 'h3', 's3');
+  await host.ready;
+  await request('POST', `/api/rooms/${roomId}/settings`, { clientId: 'h3', secret: 's3', relayAllowed: false });
+  const guest = join(roomId, 'g3', 't3');
+  await guest.ready;
+  await request('POST', `/api/rooms/${roomId}/sharing`, { clientId: 'h3', secret: 's3', action: 'start', relayFormat: 'aac', source: 'app', direct: false });
+  await sleep(60);
+  const started = guest.last('sharing-started');
+  check('guests are told there is no direct path', started && started.data.directAvailable === false && started.data.shareSource === 'app', started && started.data);
+  check('a relay-only share switches "direct only" back off', guest.last('room-settings') && guest.last('room-settings').data.relayAllowed === true, guest.last('room-settings'));
+  const r = await request('POST', `/api/rooms/${roomId}/relay-token`, { clientId: 'g3', secret: 't3' });
+  check('and the relay takes listeners', r.status === 200 && r.json.token, r.status);
+  const late = join(roomId, 'g4', 't4');
+  await late.ready;
+  check('a late joiner\'s welcome says relay-only too', late.events[0].data.directAvailable === false, late.events[0].data);
+  await request('POST', `/api/rooms/${roomId}/sharing`, { clientId: 'h3', secret: 's3', action: 'stop' });
+  await request('POST', `/api/rooms/${roomId}/sharing`, { clientId: 'h3', secret: 's3', action: 'start', relayFormat: 'aac', source: 'tab' });
+  await sleep(60);
+  check('the next ordinary share offers the direct path again', guest.last('sharing-started').data.directAvailable === true);
+  for (const m of [host, guest, late]) m.req.destroy();
+}
+
 async function testPreviewAndInfo() {
   console.log('\nlink preview');
   const { json: { roomId } } = await request('POST', '/api/rooms');
@@ -278,6 +305,7 @@ async function testMetricsAndLimits() {
       try { await request('GET', '/'); break; } catch (e) { if (i <= 0) throw e; await sleep(200); }
     }
     await testRelayHttp();
+    await testRelayOnlyHost();
     await testPreviewAndInfo();
     await testMetricsAndLimits();
   } catch (e) {

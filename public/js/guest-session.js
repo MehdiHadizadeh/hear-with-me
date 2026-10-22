@@ -16,7 +16,7 @@ import { setStage, show } from './dom.js';
 import { faDigits } from './format.js';
 import { resumeAudio } from './audio-meter.js';
 import { RECEIVE_CAPS } from './audio-quality.js';
-import { canPlayRelay, isTouchDevice, prefersScreenOff } from './platform.js';
+import { canPlayRelay, isTouchDevice, nativeAudio, nativePlatform, prefersScreenOff } from './platform.js';
 import { createRelayPlayer, SILENCE } from './relay-player.js';
 import { report, withPlatform } from './metrics.js';
 import { minutesBucket } from '../shared/metrics.js';
@@ -65,6 +65,9 @@ export function createGuestSession({
 
   let relayFormat = null;     // what the host is encoding, if anything
   let relayAllowed = true;    // the host's "direct only" switch, inverted
+  // False when the host shares from the Android app: there is no direct path
+  // to offer, only the relay.
+  let directAvailable = true;
   // A phone has to tap once before audio may start on its own; a desktop page
   // can usually just begin. Until then nothing connects.
   let armed = !isTouchDevice;
@@ -73,7 +76,14 @@ export function createGuestSession({
   let hostName = '';
 
   const relayUsable = () => relayAllowed && canPlayRelay(relayFormat);
-  const pathNow = () => (mode === 'relay' && relayUsable() ? 'relay' : 'direct');
+  const pathNow = () => ((mode === 'relay' || !directAvailable) && relayUsable() ? 'relay' : 'direct');
+
+  // In the Android app, a foreground service is what keeps a screen-off
+  // listen alive once the app is in the background (app/android/.../ListenService).
+  function keepAppAlive(on) {
+    if (nativePlatform !== 'android' || !nativeAudio) return;
+    nativeAudio.keepListening({ on, title: hostName ? `${hostName} داره پخش می‌کنه` : 'Hear With Me' }).catch(() => {});
+  }
 
   const relay = createRelayPlayer({
     api,
@@ -141,6 +151,8 @@ export function createGuestSession({
   function renderModeChoice() {
     const relayOk = relayUsable() || (relayAllowed && !relayFormat); // format not known yet
     ui.modeRelay.disabled = !relayOk;
+    // A relay-only host leaves nothing to choose.
+    ui.modeDirect.disabled = !directAvailable;
     ui.modeRelay.setAttribute('aria-checked', String(mode === 'relay' && relayOk));
     ui.modeDirect.setAttribute('aria-checked', String(mode !== 'relay' || !relayOk));
   }
@@ -162,8 +174,9 @@ export function createGuestSession({
 
     if (listeningSince === null) {
       listeningSince = Date.now();
-      report('listen-started', withPlatform({ path, why }));
+      report('listen-started', withPlatform({ path, why: directAvailable ? why : 'relay-only' }));
     }
+    keepAppAlive(path === 'relay');
 
     if (path === 'relay') {
       // The meter taps a copy of what the element plays. Where a browser
@@ -346,6 +359,7 @@ export function createGuestSession({
     timer.stop();
     stats.stop();
     wakeLock.release();
+    keepAppAlive(false);
     setReactionsEnabled(false);
   }
 
@@ -384,6 +398,10 @@ export function createGuestSession({
 
   // Switching paths mid-listen: the chip is also the switch.
   ui.pathChip.addEventListener('click', () => {
+    if (!directAvailable) {
+      notices.showInfo('میزبان از گوشی پخش می‌کنه؛ این پخش فقط از راه سرور می‌رسه.');
+      return;
+    }
     const next = pathNow() === 'relay' ? 'direct' : 'relay';
     if (next === 'relay' && !relayUsable()) {
       notices.showInfo(relayAllowed
@@ -548,8 +566,9 @@ export function createGuestSession({
 
     // What the host offers this share: the relay format (or none) and
     // whether the host lets anyone use it.
-    applyShare({ relayFormat: format }) {
+    applyShare({ relayFormat: format, directAvailable: direct }) {
       relayFormat = format || null;
+      directAvailable = direct !== false;
       renderModeChoice();
     },
     applySettings(settings) {

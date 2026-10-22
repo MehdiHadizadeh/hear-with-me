@@ -13,7 +13,7 @@
 // Either can have the host's own microphone mixed in.
 
 import { setStage, show } from './dom.js';
-import { canCaptureSystemAudio, canShareFile } from './platform.js';
+import { canCaptureNativeAudio, canCaptureSystemAudio, canShareFile, nativeAudio } from './platform.js';
 import { createRelayEncoder, pickRelayFormat } from './relay-encoder.js';
 
 // Capture defaults are tuned for speech: automatic gain control rides the
@@ -63,7 +63,46 @@ export function createHostSession({
   });
   const relayStream = (stream) => { if (relay) relay.setStream(stream); };
 
-  const isSharing = () => outgoing !== null;
+  // The Android app shares what other apps play natively: no stream reaches
+  // this page at all, only a level to draw. Guests hear it through the relay.
+  let nativeShare = false;
+
+  const isSharing = () => outgoing !== null || nativeShare;
+
+  if (canCaptureNativeAudio) {
+    nativeAudio.addListener('level', ({ level }) => { if (nativeShare) meter.feed(level); });
+    nativeAudio.addListener('captureState', ({ state }) => {
+      if (!nativeShare) return;
+      // Ended from the notification, or by the system.
+      if (state === 'stopped') stopSharing();
+      else if (state === 'error') notices.showError('پخش صدای گوشی با مشکل روبه‌رو شد. دوباره امتحان کن.');
+    });
+  }
+
+  async function startNativeShare() {
+    ui.hostStatus.textContent = 'اندروید اجازه می‌خواد؛ «شروع» رو بزن.';
+    try {
+      await nativeAudio.startCapture({
+        origin: window.location.origin,
+        roomId: api.roomId,
+        ...api.nativeCredentials(),
+        bitrate: 128000,
+      });
+    } catch (e) {
+      setStage(ui.hostStage, 'error');
+      ui.hostTitle.textContent = 'اجازه داده نشد';
+      ui.hostStatus.textContent = 'برای پخش صدای گوشی، اندروید باید اجازه‌ی ضبط صدا و صفحه رو بده. فقط صدا فرستاده می‌شه، نه تصویر.';
+      return;
+    }
+    nativeShare = true;
+    base = { kind: 'app', stop: () => nativeAudio.stopCapture().catch(() => {}) };
+    showSharingControls(true);
+    timer.start(0);
+    ui.nowPlayingInput.value = '';
+    startSignalCheck();
+    await api.setSharing(true, { relayFormat: 'aac', source: 'app', direct: false });
+    nativeAudio.setUploading({ on: relayDemand > 0 }).catch(() => {});
+  }
 
   // -- getting a sound -------------------------------------------------------
 
@@ -225,6 +264,8 @@ export function createHostSession({
         ui.hostTitle.textContent = 'صدایی نمیاد';
         ui.hostStatus.textContent = base && base.kind === 'file'
           ? 'فایل پخش نمی‌شه یا خیلی آرومه.'
+          : base && base.kind === 'app'
+          ? 'یا الان چیزی پخش نمی‌شه، یا اون اپ اجازه نمی‌ده صداش ضبط بشه (بعضی اپ‌های فیلم و موسیقی این‌طورین). یه آهنگ از یه اپ دیگه پخش کن.'
           : 'یا کلید صدا تو پنجره‌ی انتخاب روشن نبود، یا تو اون تب الان چیزی پخش نمی‌شه. یه آهنگ پخش کن؛ اگه باز هم نیومد، «تعویض منبع صدا» رو بزن.';
         // Keep listening: the moment something plays, this turns live.
       }
@@ -243,11 +284,13 @@ export function createHostSession({
   function showSharingControls(sharing) {
     show(ui.startShareBtn, !sharing && canCaptureSystemAudio);
     show(ui.fileShareLabel, !sharing && canShareFile, 'flex');
-    show(ui.switchSourceBtn, sharing);
+    // Natively there is nothing to switch to and no stream to mix into: the
+    // phone shares whatever plays, whichever app plays it.
+    show(ui.switchSourceBtn, sharing && !nativeShare);
     show(ui.stopShareBtn, sharing);
     show(ui.hostLiveBox, sharing);
-    show(ui.micRow, sharing && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'flex');
-    show(ui.hostRehearsal, !sharing && canCaptureSystemAudio);
+    show(ui.micRow, sharing && !nativeShare && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'flex');
+    show(ui.hostRehearsal, !sharing && canCaptureSystemAudio && !canCaptureNativeAudio);
     show(ui.fileControls, sharing && !!base && base.kind === 'file', 'flex');
   }
 
@@ -272,6 +315,7 @@ export function createHostSession({
   }
 
   async function startSharing() {
+    if (canCaptureNativeAudio) { await startNativeShare(); return; }
     ui.hostStatus.textContent = 'منتظر انتخاب تب...';
     const source = await captureScreenAudio();
     if (source) await begin(source);
@@ -312,6 +356,7 @@ export function createHostSession({
     ui.micToggle.checked = false;
     if (base) base.stop();
     base = null;
+    nativeShare = false;
     outgoing = null;
     relayStream(null);
     for (const pc of peers.values()) pc.close();
@@ -334,7 +379,8 @@ export function createHostSession({
   // -- signaling -----------------------------------------------------------
 
   async function handleOffer(guestId, offerSdp) {
-    if (!isSharing()) return; // not sharing right now; ignore
+    // Not sharing, or sharing natively (relay only): nothing to answer with.
+    if (!outgoing) return;
 
     const existing = peers.get(guestId);
     if (existing) existing.close();
@@ -469,7 +515,12 @@ export function createHostSession({
 
   // A phone can only play a file of its own into the room; say so plainly
   // instead of offering a button that fails after a permission prompt.
-  if (!canCaptureSystemAudio) {
+  if (canCaptureNativeAudio) {
+    ui.startShareBtn.textContent = 'پخش صدای گوشی';
+    ui.fileShareText.textContent = 'یا یه فایل صوتی از گوشی';
+    ui.hostPlatformNote.textContent = 'هرچی رو گوشیت پخش بشه (اسپاتیفای، یوتیوب، تلگرام و…) مهمان‌ها می‌شنون. اندروید یه بار اجازه می‌خواد؛ فقط صدا فرستاده می‌شه، نه تصویر. صفحه‌ی گوشی رو روشن نگه دار.';
+    show(ui.hostPlatformNote, true);
+  } else if (!canCaptureSystemAudio) {
     ui.fileShareLabel.classList.replace('btn-secondary', 'btn-primary');
     ui.fileShareText.textContent = 'یه فایل صوتی از گوشیت پخش کن';
     ui.hostPlatformNote.textContent = 'مرورگرهای گوشی اجازه نمی‌دن صدای اپ‌های دیگه (مثل اسپاتیفای) فرستاده بشه. یه فایل از گوشیت پخش کن، یا همین لینک رو روی کامپیوترت باز کن و از اونجا هرچی گوش می‌دی رو پخش کن.';
@@ -487,6 +538,7 @@ export function createHostSession({
     handleRelayDemand(count) {
       relayDemand = count || 0;
       if (relay) relay.setDemand(relayDemand);
+      if (nativeShare) nativeAudio.setUploading({ on: relayDemand > 0 }).catch(() => {});
     },
 
     applySettings(settings) {

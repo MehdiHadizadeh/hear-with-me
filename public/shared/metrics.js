@@ -13,14 +13,15 @@ export const METRIC_EVENTS = {
   // A room was created (counted by the server itself).
   'room-created': {},
   // The host started sharing, and from what.
-  'share-started': { source: ['tab', 'screen', 'file', 'unknown'] },
+  'share-started': { source: ['tab', 'screen', 'file', 'app', 'unknown'] },
   // The host's capture produced no sound in its first seconds.
   'share-silent': {},
   // A guest started hearing audio, by which path, and why that path.
   'listen-started': {
     path: ['direct', 'relay'],
-    why: ['chosen', 'default', 'fallback'],
+    why: ['chosen', 'default', 'fallback', 'relay-only'],
     platform: ['ios', 'android', 'desktop', 'other'],
+    shell: ['web', 'app'],
   },
   // A direct connection gave up, and what ICE had found by then.
   'direct-failed': {

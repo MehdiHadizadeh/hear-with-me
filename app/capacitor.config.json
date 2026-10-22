@@ -1,0 +1,20 @@
+{
+  "appId": "ir.hearwithme.app",
+  "appName": "Hear With Me",
+  "webDir": "www",
+  "server": {
+    "url": "https://hearwithme.ir",
+    "androidScheme": "https",
+    "allowNavigation": ["hearwithme.ir", "*.hearwithme.ir"],
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#070910"
+  },
+  "ios": {
+    "backgroundColor": "#070910",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}

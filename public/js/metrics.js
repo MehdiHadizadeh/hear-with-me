@@ -4,7 +4,7 @@
 // Fire and forget: a counter is never worth a retry, an error, or a delay in
 // anything the person is doing.
 
-import { platformName } from './platform.js';
+import { isNativeApp, platformName } from './platform.js';
 
 export function report(event, props = {}) {
   const body = JSON.stringify({ event, props });
@@ -19,4 +19,4 @@ export function report(event, props = {}) {
   } catch (e) { /* no fetch, no counter */ }
 }
 
-export const withPlatform = (props = {}) => ({ ...props, platform: platformName });
+export const withPlatform = (props = {}) => ({ ...props, platform: platformName, shell: isNativeApp ? 'app' : 'web' });
