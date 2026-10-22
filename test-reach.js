@@ -7,7 +7,7 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createFramer, createRelay } from './public/shared/relay-framing.js';
+import { createFramer, createRelay, keepFresh, MAX_LISTENER_LAG_MS } from './public/shared/relay-framing.js';
 import { cleanMetric, minutesBucket } from './public/shared/metrics.js';
 import { roomPreview } from './public/shared/preview.js';
 
@@ -82,6 +82,18 @@ function testFraming() {
   webm.push(2, 0, Uint8Array.of(0x1a, 0x45, 0xdf, 0xa3, 0x80));
   check('a WebM listener is restarted when the host restarts its recorder', w.ended === true);
   writes.length = 0;
+}
+
+// A slow listener must not fall further and further behind live.
+function testFreshness() {
+  console.log('\na slow listener stays near live');
+  const now = 100000;
+  const q = [0, 1000, 2000, 3000, 3900].map((age) => ({ bytes: new Uint8Array(1), at: now - 4000 + age }));
+  check('aac: frames too old to play are dropped', keepFresh(q, 'aac', now) && q.length === 3 && now - q[0].at <= MAX_LISTENER_LAG_MS, q.map((x) => now - x.at));
+  const w = [{ bytes: new Uint8Array(1), at: now - 4000 }];
+  check('webm: a late listener starts over instead', keepFresh(w, 'webm', now) === false);
+  const ok = [{ bytes: new Uint8Array(1), at: now - 100 }];
+  check('a listener on time keeps everything', keepFresh(ok, 'webm', now) && ok.length === 1);
 }
 
 function testSharedRules() {
@@ -291,6 +303,7 @@ async function testMetricsAndLimits() {
 
 (async () => {
   testFraming();
+  testFreshness();
   testSharedRules();
 
   const port = await new Promise((resolve) => { const s = net.createServer(); s.listen(0, () => { const { port: p } = s.address(); s.close(() => resolve(p)); }); });

@@ -2,6 +2,10 @@
 // track, in that service's own player, kept within a couple of seconds of
 // where the host is.
 //
+// When the host's Android app carries the sound (`via: 'relay'`) there is no
+// player here at all: the song arrives as the room's ordinary audio, and this
+// card only says where it is from.
+//
 // The guest's own player is theirs to touch. Pausing it is respected until
 // they press play again (in it, or on our button); then it catches up.
 
@@ -31,9 +35,15 @@ export function createLinkListen({ ui, notices, onChange = () => {} }) {
     show(ui.linkCard, !!track, 'grid');
     if (!track) return;
     ui.guestLinkProvider.textContent = providerName();
+    if (track.via === 'relay') {
+      show(ui.linkJoinBtn, false);
+      ui.linkStatus.textContent = track.playing ? 'از راه سرور Hear With Me می‌رسه' : 'میزبان مکث کرده';
+      ui.guestLinkNote.textContent = `لازم نیست ${providerName()} برات باز بشه یا VPN بزنی؛ همین بالا می‌شنویش.`;
+      return;
+    }
     ui.guestLinkNote.textContent = track.provider === 'spotify'
       ? SPOTIFY_NOTE
-      : 'اگه گوشی قفل بشه ممکنه پخش‌کننده مکث کنه؛ برگردی، خودش با میزبان هم‌زمان می‌شه.';
+      : `پخش از خود ${providerName()}ه؛ اگه برات فیلتره و پخش‌کننده باز نشد، VPN رو روشن کن. اگه گوشی قفل بشه ممکنه مکث کنه؛ برگردی، خودش هم‌زمان می‌شه.`;
     const waitingToJoin = !joined || userPaused;
     show(ui.linkJoinBtn, waitingToJoin && !!player);
     ui.linkJoinBtn.textContent = userPaused ? 'ادامه، هم‌زمان با میزبان' : 'پخش، هم‌زمان با میزبان';
@@ -50,6 +60,11 @@ export function createLinkListen({ ui, notices, onChange = () => {} }) {
 
   async function sync() {
     if (!player || !state || !joined) return;
+    // Another item of the playlist: go there first, then to the moment.
+    if ((await player.index()) !== (state.track.index || 0)) {
+      act(() => player.skipTo(state.track.index || 0));
+      return; // the next round finds the right item and seeks
+    }
     if (!state.track.playing) {
       if (player.playing) act(() => player.pause());
       const pos = await player.position();
@@ -133,12 +148,14 @@ export function createLinkListen({ ui, notices, onChange = () => {} }) {
         onChange(false);
         return;
       }
-      const isNew = !state || state.track.url !== track.url;
+      // A new link, or the same one changing how it reaches us.
+      const isNew = !state || state.track.url !== track.url || state.track.via !== track.via;
       const wasPlaying = !!state && state.track.playing;
       state = { track, serverNow, receivedAt: Date.now() };
       if (isNew) {
         userPaused = false;
-        loadPlayer(track);
+        if (track.via === 'relay') teardown();
+        else loadPlayer(track);
       } else {
         // The host pressed play again: whatever the guest paused is over.
         // (A heartbeat while playing is not that.)

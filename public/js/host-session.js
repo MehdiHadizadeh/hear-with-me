@@ -589,6 +589,9 @@ export function createHostSession({
   return {
     peers,
     isSharing,
+    startSharing,
+    // Whether the current share has been heard to carry any sound yet.
+    get heardSound() { return heardSound; },
     handleOffer,
     handleIce,
     handleQualityRequest,

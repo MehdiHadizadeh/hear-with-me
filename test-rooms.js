@@ -536,7 +536,7 @@ async function testTrack() {
   check('only the host sets the track', notHost.status === 403, notHost.status);
 
   const set = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', url: 'https://m.soundcloud.com/a/b?si=x' });
-  check('the host sets a track, canonical and paused', set.status === 200 && set.json.track.url === 'https://soundcloud.com/a/b' && set.json.track.playing === false, set.json);
+  check('the host sets a track, canonical and paused', set.status === 200 && set.json.track.url === 'https://soundcloud.com/a/b' && set.json.track.playing === false && set.json.track.via === 'embed', set.json);
   await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', playing: true, positionMs: 42000 });
   await sleep(60);
   const last = guest.events.filter((e) => e.event === 'track').pop();
@@ -546,6 +546,11 @@ async function testTrack() {
   await late.ready;
   const welcome = late.events.find((e) => e.event === 'welcome');
   check('a late joiner gets the track in the welcome', welcome && welcome.data.track && welcome.data.track.playing === true, welcome && welcome.data.track);
+
+  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', playing: true, positionMs: 1000, index: 2, via: 'relay' });
+  await sleep(60);
+  const moved = guest.events.filter((e) => e.event === 'track').pop();
+  check('playlist item and path reach guests', moved && moved.data.track.index === 2 && moved.data.track.via === 'relay', moved && moved.data.track);
 
   await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', clear: true });
   await sleep(60);

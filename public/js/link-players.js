@@ -4,10 +4,13 @@
 //   const player = await createLinkPlayer(track, container, { onState });
 //   player.play(); player.pause(); player.seek(ms);
 //   await player.position();   // ms
+//   await player.index();      // which item of a playlist or set (0 otherwise)
+//   player.skipTo(i);
+//   await player.title();      // what is playing, where the service says
 //   player.playing;            // as the player last reported it
 //   player.destroy();
 //
-// `onState({ playing, positionMs, ended })` fires when the player itself
+// `onState({ playing, positionMs, index, ended })` fires when the player itself
 // changes: someone pressed its play button, dragged its bar, or it finished.
 // The host's page turns those into the room's track state; a guest's page
 // uses them to notice its own listener pausing.
@@ -16,7 +19,7 @@
 // is their player, their licence, their account (Spotify plays a 30-second
 // preview to anyone not signed in to it in this browser).
 
-import { spotifyUri, youtubeId } from '../shared/links.js';
+import { spotifyUri, youtubeId, youtubeList } from '../shared/links.js';
 
 const scripts = new Map();
 function loadScript(src, ready) {
@@ -55,12 +58,16 @@ async function soundcloud(track, container, onState) {
   const E = Widget.Events;
   let playing = false;
   const position = () => new Promise((resolve) => widget.getPosition((ms) => resolve(ms || 0)));
+  const index = () => new Promise((resolve) => widget.getCurrentSoundIndex((i) => resolve(i || 0)));
+  const report = async (extra = {}) => onState({ playing, positionMs: await position(), index: await index(), ...extra });
 
   await withTimeout(new Promise((resolve) => widget.bind(E.READY, resolve)), LOAD_TIMEOUT_MS);
-  widget.bind(E.PLAY, async () => { playing = true; onState({ playing, positionMs: await position() }); });
-  widget.bind(E.PAUSE, async () => { playing = false; onState({ playing, positionMs: await position() }); });
-  widget.bind(E.SEEK, (e) => onState({ playing, positionMs: (e && e.currentPosition) || 0 }));
-  widget.bind(E.FINISH, () => { playing = false; onState({ playing, positionMs: 0, ended: true }); });
+  widget.bind(E.PLAY, () => { playing = true; report(); });
+  widget.bind(E.PAUSE, () => { playing = false; report(); });
+  widget.bind(E.SEEK, () => report());
+  // The end of one item in a set is not the end: the next one starts and
+  // reports itself. Only the last item's end stops anything.
+  widget.bind(E.FINISH, () => { playing = false; setTimeout(() => { if (!playing) report({ ended: true }); }, 1500); });
 
   return {
     get playing() { return playing; },
@@ -68,6 +75,11 @@ async function soundcloud(track, container, onState) {
     pause: () => widget.pause(),
     seek: (ms) => widget.seekTo(Math.max(0, ms)),
     position,
+    index,
+    skipTo: (i) => widget.skip(i),
+    title: () => new Promise((resolve) => widget.getCurrentSound((sound) => resolve(sound
+      ? [sound.user && sound.user.username, sound.title].filter(Boolean).join(' — ')
+      : null))),
     destroy: () => { try { widget.unbind(E.PLAY); } catch (e) { /* gone */ } iframe.remove(); },
   };
 }
@@ -113,6 +125,10 @@ async function spotify(track, container, onState) {
     pause: () => controller.pause(),
     seek: (ms) => controller.seek(Math.max(0, ms) / 1000),
     position: async () => last.position + (playing ? Date.now() - last.at : 0),
+    // The embed has no way to say or choose which item of a playlist plays.
+    index: async () => 0,
+    skipTo: () => {},
+    title: async () => null,
     destroy: () => { try { controller.destroy(); } catch (e) { holder.remove(); } },
   };
 }
@@ -131,19 +147,25 @@ async function youtube(track, container, onState) {
   container.append(holder);
   let playing = false;
   let player;
+  const list = youtubeList(track.url);
   await withTimeout(new Promise((resolve) => {
     player = new YT.Player(holder, {
-      videoId: youtubeId(track.url),
+      ...(list ? {} : { videoId: youtubeId(track.url) }),
       width: '100%',
       height: '200',
-      playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+      playerVars: { playsinline: 1, rel: 0, modestbranding: 1, ...(list ? { listType: 'playlist', list } : {}) },
       events: {
         onReady: resolve,
         onStateChange: (e) => {
           const positionMs = Math.round((player.getCurrentTime() || 0) * 1000);
-          if (e.data === YT.PlayerState.PLAYING) { playing = true; onState({ playing, positionMs }); }
-          else if (e.data === YT.PlayerState.PAUSED) { playing = false; onState({ playing, positionMs }); }
-          else if (e.data === YT.PlayerState.ENDED) { playing = false; onState({ playing, positionMs: 0, ended: true }); }
+          const index = Math.max(0, (player.getPlaylistIndex && player.getPlaylistIndex()) || 0);
+          if (e.data === YT.PlayerState.PLAYING) { playing = true; onState({ playing, positionMs, index }); }
+          else if (e.data === YT.PlayerState.PAUSED) { playing = false; onState({ playing, positionMs, index }); }
+          else if (e.data === YT.PlayerState.ENDED) {
+            playing = false;
+            // In a playlist the next video follows; only a real end stops.
+            setTimeout(() => { if (!playing) onState({ playing, positionMs: 0, index, ended: true }); }, 1500);
+          }
         },
       },
     });
@@ -155,6 +177,9 @@ async function youtube(track, container, onState) {
     pause: () => player.pauseVideo(),
     seek: (ms) => player.seekTo(Math.max(0, ms) / 1000, true),
     position: async () => Math.round((player.getCurrentTime() || 0) * 1000),
+    index: async () => Math.max(0, (player.getPlaylistIndex && player.getPlaylistIndex()) || 0),
+    skipTo: (i) => { if (list) player.playVideoAt(i); },
+    title: async () => { try { return (player.getVideoData() || {}).title || null; } catch (e) { return null; } },
     destroy: () => { try { player.destroy(); } catch (e) { /* gone */ } holder.remove(); },
   };
 }

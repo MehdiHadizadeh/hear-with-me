@@ -8,6 +8,12 @@
 // embedded player. Then no audio passes through us at all; only "playing, at
 // 1:23" does.
 //
+// Two ways it reaches a guest (`via`):
+//   embed — the guest's own embedded player plays it. Needs that service to
+//           open on the guest's network: in Iran, usually a VPN.
+//   relay — the host's Android app captures its own player and sends the
+//           sound like any other share. Guests need nothing but this site.
+//
 // Shared by both servers (to refuse anything else) and the page (to load the
 // right player), so it touches nothing but strings.
 
@@ -37,6 +43,11 @@ const PROVIDERS = {
   youtube: {
     hosts: ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'],
     parse(url) {
+      // A playlist plays as one: its list, from its first video.
+      const list = url.searchParams.get('list');
+      if (list && /^[A-Za-z0-9_-]{10,64}$/.test(list) && (url.pathname === '/playlist' || url.pathname === '/watch')) {
+        return `https://www.youtube.com/playlist?list=${list}`;
+      }
       let id = null;
       if (url.hostname === 'youtu.be') id = url.pathname.slice(1);
       else if (url.pathname === '/watch') id = url.searchParams.get('v');
@@ -80,18 +91,35 @@ export function youtubeId(url) {
   return m ? m[1] : null;
 }
 
+export function youtubeList(url) {
+  const m = /[?&]list=([A-Za-z0-9_-]{10,64})/.exec(url);
+  return m ? m[1] : null;
+}
+
+export const LINK_VIA = ['embed', 'relay'];
+
 export const PROVIDER_NAMES = { soundcloud: 'SoundCloud', spotify: 'Spotify', youtube: 'YouTube' };
 
 // The host's report of where the track is, cleaned. `positionMs` is where it
 // was at `updatedAt` (server clock); while playing, it has moved on since.
+// `index` is which item of a playlist or set. `via` only when it changes.
 export function cleanTrackState(body) {
   if (!body || typeof body !== 'object') return null;
   const playing = body.playing === true;
   const position = Number(body.positionMs);
-  return {
+  const index = Number(body.index);
+  const state = {
     playing,
     positionMs: Number.isFinite(position) && position >= 0 ? Math.min(Math.round(position), 24 * 3600 * 1000) : 0,
+    index: Number.isInteger(index) && index >= 0 && index < 10000 ? index : 0,
   };
+  if (LINK_VIA.includes(body.via)) state.via = body.via;
+  return state;
+}
+
+// A new track: paused at the start, reaching guests the way the host asked.
+export function newTrack(link, via) {
+  return { ...link, via: LINK_VIA.includes(via) ? via : 'embed', playing: false, positionMs: 0, index: 0, updatedAt: Date.now() };
 }
 
 // Where the track is now, given a state from the server and how long ago

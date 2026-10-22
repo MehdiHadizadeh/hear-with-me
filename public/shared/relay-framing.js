@@ -202,6 +202,27 @@ export function createFramer(format, { backlogMs = DEFAULT_BACKLOG_MS } = {}) {
   throw new Error(`unknown relay format: ${format}`);
 }
 
+// -- keeping each listener near live ------------------------------------------
+
+// A listener whose connection slows down (a train, a weak signal) stops
+// reading for a while. Everything sent meanwhile used to wait for them in a
+// queue and play afterwards, in order — so every stall was added to their
+// delay for good, until a guest was half a minute behind the host. Live audio
+// that late is worth less than a gap, so a listener's queue holds this much
+// and no more.
+export const MAX_LISTENER_LAG_MS = 2500;
+
+// `queue` is [{ bytes, at }], oldest first. Trims what is too old to be worth
+// playing and returns true; or returns false when this listener has to start
+// over instead — a WebM stream cannot lose pieces from its middle, but AAC can
+// lose whole frames and play straight on.
+export function keepFresh(queue, format, now = Date.now()) {
+  if (!queue.length || now - queue[0].at <= MAX_LISTENER_LAG_MS) return true;
+  if (format !== 'aac') return false;
+  while (queue.length && now - queue[0].at > MAX_LISTENER_LAG_MS) queue.shift();
+  return true;
+}
+
 // -- the relay itself -----------------------------------------------------------
 
 // Listeners are `{ write(Uint8Array), end() }`. The servers wrap whatever they

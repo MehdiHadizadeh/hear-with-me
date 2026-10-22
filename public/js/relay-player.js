@@ -9,12 +9,19 @@
 const STALL_MS = 8000;     // no progress for this long: the stream is dead
 const MAX_LAG_S = 4;       // further behind live than this: skip ahead
 const CATCH_UP_TO_S = 0.8; // ...to this far behind the newest audio
+// Every stall in playback is time the stream fell behind, and the buffer
+// check above cannot see it: the late audio arrives late, so nothing piles
+// up here. The wall clock can — the media should advance a second per
+// second. Once it is this far behind, starting the stream again is the way
+// back to live (the server starts every listener close to now).
+const MAX_DRIFT_S = 5;
 
 export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) {
   let active = false;
   let watchdog = null;
   let progress = { time: 0, at: 0 };
   let liveAnnounced = false;
+  let anchor = null;       // { wall, media } once playing: where "on time" is
 
   function clearSource() {
     clearInterval(watchdog);
@@ -38,7 +45,8 @@ export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) 
     clearInterval(watchdog);
     progress = { time: audio.currentTime, at: Date.now() };
     watchdog = setInterval(() => {
-      if (audio.paused) { progress.at = Date.now(); return; }
+      // Paused (a lock-screen pause, say) is not falling behind.
+      if (audio.paused) { progress.at = Date.now(); anchor = null; return; }
       if (audio.currentTime !== progress.time) {
         progress = { time: audio.currentTime, at: Date.now() };
       } else if (Date.now() - progress.at > STALL_MS) {
@@ -50,6 +58,9 @@ export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) 
         const edge = buffered.end(buffered.length - 1);
         if (edge - audio.currentTime > MAX_LAG_S) audio.currentTime = edge - CATCH_UP_TO_S;
       }
+      if (!anchor) { anchor = { wall: Date.now(), media: audio.currentTime }; return; }
+      const drift = (Date.now() - anchor.wall) / 1000 - (audio.currentTime - anchor.media);
+      if (drift > MAX_DRIFT_S) player.start(); // quietly: the stage stays live
     }, 1000);
   }
 
@@ -62,7 +73,7 @@ export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) 
     audio.addEventListener(evt, () => { if (active) drop(); });
   }
 
-  return {
+  const player = {
     get active() { return active; },
 
     // Resolves to null once the stream is requested, or to the reason it was
@@ -73,6 +84,7 @@ export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) 
       if (grant.error) { onRefused(grant.error); return grant.error; }
       active = true;
       liveAnnounced = false;
+      anchor = null;
       audio.srcObject = null;
       // Declares this page a music player rather than a call (Safari 17+), so
       // locking the phone is not a reason to suspend it.
@@ -88,6 +100,7 @@ export function createRelayPlayer({ api, audio, onLive, onDropped, onRefused }) 
       clearSource();
     },
   };
+  return player;
 }
 
 // A few milliseconds of silence. Playing it inside a tap is what lets the

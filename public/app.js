@@ -86,7 +86,7 @@ const guest = createGuestSession({
   timer: guestTimer,
 });
 
-const linkShare = createLinkShare({ ui, api, notices });
+const linkShare = createLinkShare({ ui, api, notices, host });
 const linkListen = createLinkListen({ ui, notices, onChange: () => updateLinkLayout() });
 
 setupInvite({ ui, roomId, notices });
@@ -331,7 +331,7 @@ events.on('sharing-started', (data) => {
 
 events.on('sharing-stopped', () => {
   sharingNow = false;
-  if (isHost) { updateLinkLayout(); return; }
+  if (isHost) { linkShare.sharingStopped(); updateLinkLayout(); return; }
   const listened = guest.handleSharingStopped();
   updateLinkLayout();
   // The host only switched the mic off; the song plays on.
