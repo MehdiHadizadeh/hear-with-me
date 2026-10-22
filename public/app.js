@@ -131,19 +131,33 @@ ui.reactionRow.addEventListener('click', (e) => {
 // Ending the room, from any of the ways it can end
 // ---------------------------------------------------------------------------
 
+// A room we are not in any more still had a header offering to invite people
+// into it and a chip counting listeners in it. Every one of those readings is
+// now either stale or, for a room that never existed, an invitation to a dead
+// link — so the dead end keeps only the code that failed.
+function showDeadEnd(title, sub) {
+  show(ui.hostCard, false);
+  show(ui.guestCard, false);
+  ui.notFoundTitle.textContent = title;
+  ui.notFoundSub.textContent = sub;
+  show(ui.notFoundCard, true);
+
+  show(ui.shareRow, false);
+  ui.qrPanel.hidden = true;
+  ui.qrBtn.setAttribute('aria-expanded', 'false');
+  show(ui.copyLinkBtn, false);
+  ui.codePlate.classList.add('is-bare');
+  show(ui.listenerPill, false);
+  show(ui.qualityPill, false);
+}
+
 function endRoom(title, sub) {
   terminated = true;
   events.close();
   host.endRoom();
   guest.endRoom();
 
-  show(ui.hostCard, false);
-  show(ui.guestCard, false);
-  ui.notFoundTitle.textContent = title;
-  ui.notFoundSub.textContent = sub;
-  show(ui.notFoundCard, true);
-  show(ui.shareRow, false);
-  ui.qrPanel.hidden = true;
+  showDeadEnd(title, sub);
   ui.connectionPill.classList.remove('live');
   ui.connectionText.textContent = 'اتاق تمام شد';
 }
@@ -345,9 +359,9 @@ if (new URLSearchParams(window.location.search).has('debug')) {
 // Guests need nothing but a browser that can receive WebRTC — which is all of
 // them — but saying so plainly beats a page that simply never connects.
 if (!window.RTCPeerConnection) {
-  show(ui.hostCard, false);
-  show(ui.guestCard, false);
-  ui.notFoundTitle.textContent = 'این مرورگر پخش زنده رو پشتیبانی نمی‌کنه';
-  ui.notFoundSub.textContent = 'با Chrome، Edge، Firefox یا Safari باز کن — این صفحه به WebRTC نیاز داره.';
-  show(ui.notFoundCard, true);
+  showDeadEnd(
+    'این مرورگر پخش زنده رو پشتیبانی نمی‌کنه',
+    'با Chrome، Edge، Firefox یا Safari باز کن — این صفحه به WebRTC نیاز داره.',
+  );
+  ui.connectionText.textContent = 'پشتیبانی نمی‌شه';
 }

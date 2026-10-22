@@ -16,7 +16,9 @@
 // the `todo` that says what to do about it.
 export const REACTIONS = {
   love: {
-    emoji: '❤',
+    // With the variation selector: bare ❤ renders as a grey text glyph beside
+    // the colour ones.
+    emoji: '❤️',
     text: 'دوستش داره',
     cheer: true,
   },

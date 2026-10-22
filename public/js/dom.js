@@ -8,6 +8,7 @@ const byId = (id) => document.getElementById(id);
 
 export const ui = Object.freeze({
   // header and status
+  codePlate: document.querySelector('.code-plate'),
   roomCode: byId('roomCode'),
   connectionPill: byId('connectionPill'),
   connectionText: byId('connectionText'),

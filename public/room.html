@@ -134,7 +134,7 @@
             <span class="live-hint" id="hostMeterHint">اگه میله‌ها تکون نمی‌خورن، یعنی صدایی گرفته نمی‌شه</span>
           </div>
 
-          <div class="now-playing" style="padding:14px 15px;">
+          <div class="now-playing now-playing--field">
             <label class="np-label" for="nowPlayingInput">داری چی گوش می‌دی؟ (اختیاری — به مهمان‌ها نشون داده می‌شه)</label>
             <div class="row">
               <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead — Weird Fishes" />
@@ -216,7 +216,9 @@
            duplicates the volume slider directly above — the host cannot fix
            your volume, only a source that is quiet at full blast. -->
       <div class="reactions" id="reactionRow">
-        <button class="reaction" type="button" data-kind="love" aria-label="دوستش دارم">❤</button>
+        <!-- With the emoji variation selector: bare ❤ falls back to the text
+             glyph on most platforms and sat here grey next to a colour 🔥. -->
+        <button class="reaction" type="button" data-kind="love" aria-label="دوستش دارم">❤️</button>
         <button class="reaction" type="button" data-kind="fire" aria-label="عالیه">🔥</button>
         <button class="reaction" type="button" data-kind="whatsthis">این چیه؟</button>
         <button class="reaction" type="button" data-kind="quiet">صدا کمه</button>
@@ -262,8 +264,8 @@
         </label>
       </div>
 
-      <p class="note" id="backgroundHint" style="display:none; margin-top:14px;">تا وقتی این صفحه بازه صدا پخش می‌شه. اگه گوشی رو قفل کنی یا از مرورگر بیرون بری پخش قطع می‌شه — این محدودیت خود مرورگرهاست. برگردی به همین تب، خودکار وصل می‌شه.</p>
-      <p class="note" id="volumeHint" style="display:none; margin-top:14px;">این دستگاه اجازه‌ی تنظیم شدت صدا از داخل صفحه رو نمی‌ده — با دکمه‌های خود دستگاه کم و زیادش کن. دکمه‌ی کناری صدا رو کامل قطع/وصل می‌کنه.</p>
+      <p class="note note-stacked" id="backgroundHint" style="display:none;">تا وقتی این صفحه بازه صدا پخش می‌شه. اگه گوشی رو قفل کنی یا از مرورگر بیرون بری پخش قطع می‌شه — این محدودیت خود مرورگرهاست. برگردی به همین تب، خودکار وصل می‌شه.</p>
+      <p class="note note-stacked" id="volumeHint" style="display:none;">این دستگاه اجازه‌ی تنظیم شدت صدا از داخل صفحه رو نمی‌ده — با دکمه‌های خود دستگاه کم و زیادش کن. دکمه‌ی کناری صدا رو کامل قطع/وصل می‌کنه.</p>
     </div>
 
     <p class="footer-note">صدا مستقیم بین مرورگر میزبان و مرورگر تو رد و بدل می‌شه و از سرور عبور نمی‌کنه.</p>

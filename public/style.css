@@ -29,12 +29,20 @@
 }
 
 :root {
+  /* Every native control the page uses — checkboxes, the select's popup, the
+     range track, the scrollbar — is painted by the browser, and without this
+     it paints them for a light page: white boxes on an ink panel. */
+  color-scheme: dark;
+
   /* ground */
   --ink: #070910;
   --ink-2: #0B0E18;
+  --ink-3: #0D111C;   /* a field with the cursor in it */
   --panel: #10141F;
   --panel-2: #161B29;
+  --panel-3: #1D2436; /* the same control, under the pointer */
   --line: #212739;
+  --line-strong: #2E3650;
   --line-soft: #191E2D;
 
   /* type */
@@ -231,14 +239,14 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   color: var(--text);
   border-color: var(--line);
 }
-.btn-secondary:hover { background: #1D2436; }
+.btn-secondary:hover { background: var(--panel-3); }
 
 .btn-ghost {
   background: transparent;
   color: var(--muted);
   border-color: var(--line);
 }
-.btn-ghost:hover { color: var(--text); border-color: #2E3650; }
+.btn-ghost:hover { color: var(--text); border-color: var(--line-strong); }
 
 /* An <a> that has to look like the primary action. */
 .btn-link { text-decoration: none; }
@@ -294,6 +302,10 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
 input[type="text"] {
   width: 100%;
   font: inherit;
+  /* 16px, not the body's 15: below 16 iOS zooms the whole page in the moment
+     the keyboard opens and never zooms back out — on the one field the guest
+     actually types into, holding the phone one-handed. */
+  font-size: 16px;
   padding: 13px 15px;
   min-height: 52px;
   border-radius: var(--r-control);
@@ -302,7 +314,12 @@ input[type="text"] {
   color: var(--text);
   transition: border-color .18s var(--ease), background-color .18s var(--ease);
 }
-input[type="text"]:focus { border-color: var(--signal); background: #0D111C; }
+input[type="text"]:focus { border-color: var(--signal); background: var(--ink-3); }
+/* A field already lights its own border when it takes focus; the offset ring
+   on top of it read as two concentric aqua outlines. Sat against the border,
+   the two become one thicker edge. */
+input[type="text"]:focus-visible,
+.select:focus-visible { outline-offset: 0; }
 /* Placeholders are read, so they meet the same 4.5:1 floor as body text. */
 input::placeholder { color: var(--faint); opacity: 1; }
 
@@ -313,8 +330,10 @@ input::placeholder { color: var(--faint); opacity: 1; }
 .row > input { flex: 1; min-width: 0; }
 .row > .btn { flex: none; }
 
-/* Room codes are read aloud and typed in — treat them as a plate, not prose. */
-.code-input {
+/* Room codes are read aloud and typed in — treat them as a plate, not prose.
+   Qualified with the element: `input[type="text"]` above outranks a bare class,
+   so the plate's weight and size were being handed straight back to body type. */
+input[type="text"].code-input {
   direction: ltr;
   text-align: center;
   text-transform: uppercase;
@@ -339,6 +358,9 @@ input::placeholder { color: var(--faint); opacity: 1; }
   line-height: 1.6;
 }
 .note-strong { color: var(--text); font-weight: 600; }
+/* A note that follows a block it belongs to, rather than sitting inside one. */
+.note-stacked { margin-top: 14px; }
+.below .note-stacked { margin-top: 20px; }
 
 .footer-note {
   margin-top: auto;
@@ -368,10 +390,15 @@ input::placeholder { color: var(--faint); opacity: 1; }
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
+  /* The copy button carries the end padding itself. */
   padding: 6px;
   padding-inline-start: 14px;
 }
-.code-plate .label { font-size: 11.5px; color: var(--faint); }
+/* Once there is nothing left to copy, it has to carry its own. */
+.code-plate.is-bare { padding: 8px 14px; }
+/* Two words that mean nothing broken apart: left to wrap, "کد اتاق" stacked
+   into a column and dragged the whole header a line taller. */
+.code-plate .label { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
 .room-code {
   direction: ltr;
   font-size: 19px;
@@ -394,7 +421,7 @@ input::placeholder { color: var(--faint); opacity: 1; }
   transition: color .18s var(--ease), background-color .18s var(--ease), border-color .18s;
 }
 .icon-btn:hover { color: var(--text); }
-.icon-btn.done { color: var(--signal); border-color: rgba(63,224,190,.4); }
+.icon-btn.done { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 40%, transparent); }
 .icon-btn svg { width: 18px; height: 18px; }
 
 .share-row { margin-bottom: 14px; display: flex; gap: 10px; }
@@ -443,19 +470,24 @@ input::placeholder { color: var(--faint); opacity: 1; }
 }
 /* The name field shares this row with its label and must not push it out. */
 .tool-row input[type="text"] { flex: 1; min-width: 0; max-width: 60%; }
-.tool-label { font-size: 12.5px; color: var(--muted); }
+/* A two-word label opposite a control is a label, not a paragraph: broken over
+   two lines it stops reading as one. */
+.tool-label { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 .tool-hint { font-size: 12px; color: var(--faint); margin-top: -6px; }
 
 .select {
   font: inherit;
-  font-size: 13.5px;
+  /* Same 16px floor as the text fields, and the same reason: a select under it
+     zooms iOS in on tap. The room page's 46px touch floor applies here too. */
+  font-size: 16px;
   color: var(--text);
   background: var(--ink-2);
   border: 1px solid var(--line);
   border-radius: var(--r-control);
   padding: 9px 12px;
-  min-height: 44px;
+  min-height: 46px;
   cursor: pointer;
+  max-width: 100%;
 }
 
 .toggle {
@@ -518,8 +550,8 @@ input::placeholder { color: var(--faint); opacity: 1; }
   min-height: 34px;
   transition: color .18s var(--ease), border-color .18s var(--ease);
 }
-.link-btn:hover { color: var(--text); border-color: #2E3650; }
-.link-btn.danger:hover { color: var(--st-alert); border-color: rgba(255,124,136,.4); }
+.link-btn:hover { color: var(--text); border-color: var(--line-strong); }
+.link-btn.danger:hover { color: var(--st-alert); border-color: color-mix(in srgb, var(--st-alert) 40%, transparent); }
 
 /* ------------------------------------------------------------- reactions */
 
@@ -541,11 +573,14 @@ input::placeholder { color: var(--faint); opacity: 1; }
   color: var(--muted);
   padding: 10px 15px;
   min-height: 46px;
+  /* The two single-glyph ones would otherwise sit under the touch floor the
+     rest of this row keeps. */
+  min-width: 46px;
   transition: color .18s var(--ease), border-color .18s var(--ease), transform .12s var(--ease);
 }
 .reaction:hover { color: var(--text); }
 .reaction:active { transform: translateY(1px); }
-.reaction.sent { color: var(--signal); border-color: rgba(63,224,190,.45); }
+.reaction.sent { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 45%, transparent); }
 /* A tap that arrived inside the cooldown. Without this the button simply did
    nothing and read as broken. */
 .reaction.cooling { opacity: .45; }
@@ -625,7 +660,7 @@ input::placeholder { color: var(--faint); opacity: 1; }
 }
 .toast-alert {
   border-inline-start-color: var(--st-alert);
-  background: rgba(255, 124, 136, .07);
+  background: color-mix(in srgb, var(--st-alert) 7%, transparent);
 }
 .toast-alert .toast-body b { color: #FFC2C8; }
 .toast.leaving { opacity: 0; transform: translateY(8px); }
@@ -656,7 +691,7 @@ input::placeholder { color: var(--faint); opacity: 1; }
   flex: none;
   transition: background-color .3s var(--ease);
 }
-.pill.live { color: var(--text); border-color: rgba(63,224,190,.28); }
+.pill.live { color: var(--text); border-color: color-mix(in srgb, var(--signal) 28%, transparent); }
 .pill.live .dot {
   background: var(--st-live);
   animation: beat 2.4s ease-in-out infinite;
@@ -690,7 +725,7 @@ input::placeholder { color: var(--faint); opacity: 1; }
 }
 .stage[data-state="waiting"] { --st: var(--st-wait); }
 .stage[data-state="connecting"] { --st: var(--st-connect); }
-.stage[data-state="live"] { --st: var(--st-live); border-color: rgba(63, 224, 190, .3); }
+.stage[data-state="live"] { --st: var(--st-live); border-color: color-mix(in srgb, var(--signal) 30%, transparent); }
 .stage[data-state="stopped"] { --st: var(--st-idle); }
 .stage[data-state="dropped"], .stage[data-state="error"] { --st: var(--st-alert); }
 
@@ -826,7 +861,6 @@ input::placeholder { color: var(--faint); opacity: 1; }
   transform: scaleY(0.04);
   transform-origin: center; /* mirrored around the centre line */
   will-change: transform;
-  transition: background-color .3s var(--ease);
 }
 .meter.idle span {
   background: var(--panel-2);
@@ -863,6 +897,8 @@ input::placeholder { color: var(--faint); opacity: 1; }
   word-break: break-word;
   text-align: start;
 }
+/* The host's version of the same block is a labelled field, not a read-out. */
+.now-playing--field { padding: 14px 15px; }
 .now-playing .np-label {
   display: block;
   font-size: 11px;
@@ -896,8 +932,8 @@ input::placeholder { color: var(--faint); opacity: 1; }
 .mute-btn .wave-off { display: none; }
 .mute-btn[aria-pressed="true"] {
   color: var(--st-alert);
-  border-color: rgba(255, 124, 136, .35);
-  background: rgba(255, 124, 136, .1);
+  border-color: color-mix(in srgb, var(--st-alert) 35%, transparent);
+  background: color-mix(in srgb, var(--st-alert) 10%, transparent);
 }
 .mute-btn[aria-pressed="true"] .wave-on { display: none; }
 .mute-btn[aria-pressed="true"] .wave-off { display: inline; }
@@ -921,8 +957,8 @@ input::placeholder { color: var(--faint); opacity: 1; }
 .notice-text { flex: 1; }
 /* Something that went wrong looks different from something that just changed. */
 .notice-alert {
-  background: rgba(255, 124, 136, .1);
-  border-color: rgba(255, 124, 136, .3);
+  background: color-mix(in srgb, var(--st-alert) 10%, transparent);
+  border-color: color-mix(in srgb, var(--st-alert) 30%, transparent);
   color: #FFC2C8;
 }
 .notice-close {
@@ -1005,12 +1041,20 @@ kbd {
   .wavefield { height: 420px; inset: -80px -50vw auto; }
 }
 
-/* Guests are overwhelmingly on a phone: nothing under 46px, no zooming. The
-   wordmark gives way to the mark alone here — the room code is what the header
-   is actually for. */
+/* Guests are overwhelmingly on a phone: nothing under 46px, no zooming. On the
+   room page the wordmark gives way to the mark alone — the code plate is what
+   that header is actually for, and the two together no longer fit. The landing
+   page keeps its wordmark: there the header is the only place the name appears. */
+@media (max-width: 420px) {
+  .room-head .brand-name { display: none; }
+}
 @media (max-width: 380px) {
   .brand-name { font-size: 16px; }
   .room-code { font-size: 17px; letter-spacing: .12em; }
+  /* Below this the label and its control stop fitting on one line without
+     squeezing one of them; stacked, both keep their full width. */
+  .tool-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .tool-row input[type="text"] { max-width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -10,3 +10,6 @@ node_modules/
 
 # Notes we keep for ourselves: handoff, product and design decisions.
 internal/
+
+# Design-review archives from the Impeccable skill.
+.impeccable/
