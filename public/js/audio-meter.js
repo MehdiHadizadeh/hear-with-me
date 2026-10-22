@@ -51,6 +51,10 @@ export function createLevelMeter(container, barCount = 32) {
 
   let source = null;
   let analyser = null;
+  // A second, much longer window just for reading the level: 32768 samples
+  // is about two thirds of a second, so polling a few times a second misses
+  // nothing — not even a short sound between two polls.
+  let levelAnalyser = null;
   let data = null;
   let frame = null;
   let fedLevel = null; // a level from outside (the Android app's capture), 0..1
@@ -80,6 +84,10 @@ export function createLevelMeter(container, barCount = 32) {
         analyser.smoothingTimeConstant = SMOOTHING;
         data = new Uint8Array(analyser.frequencyBinCount);
         source.connect(analyser); // analyser only: nothing is routed to output
+        levelAnalyser = ctx.createAnalyser();
+        levelAnalyser.fftSize = 32768;
+        levelAnalyser.smoothingTimeConstant = 0;
+        source.connect(levelAnalyser);
         container.classList.remove('idle');
         draw();
       } catch (e) {
@@ -103,10 +111,12 @@ export function createLevelMeter(container, barCount = 32) {
       for (const bar of bars) bar.style.transform = `scaleY(${shown})`;
     },
 
-    level() {
-      if (!analyser) return fedLevel || 0;
-      const wave = new Uint8Array(analyser.fftSize);
-      analyser.getByteTimeDomainData(wave);
+    // `instant` reads the short window, for something drawn every frame.
+    level(instant = false) {
+      const reader = (!instant && levelAnalyser) || analyser;
+      if (!reader) return fedLevel || 0;
+      const wave = new Uint8Array(reader.fftSize);
+      reader.getByteTimeDomainData(wave);
       let peak = 0;
       for (const v of wave) peak = Math.max(peak, Math.abs(v - 128));
       return peak / 128;
@@ -116,6 +126,7 @@ export function createLevelMeter(container, barCount = 32) {
       if (frame) { cancelAnimationFrame(frame); frame = null; }
       if (source) { try { source.disconnect(); } catch (e) { /* already gone */ } source = null; }
       analyser = null;
+      levelAnalyser = null;
       data = null;
       fedLevel = null;
       container.classList.add('idle');

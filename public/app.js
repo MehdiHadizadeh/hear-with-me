@@ -383,7 +383,7 @@ new MutationObserver(() => carMode.setState(ui.guestStage.dataset.state))
 // Nothing moves when nothing plays, or for anyone who asked for less motion.
 if (ui.markVoice && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const breathe = () => {
-    const level = (isHost ? hostMeter : guestMeter).level();
+    const level = (isHost ? hostMeter : guestMeter).level(true);
     ui.markVoice.style.transform = `translateY(${(Math.min(1, level * 1.6) * 3.5).toFixed(2)}px)`;
     requestAnimationFrame(breathe);
   };
