@@ -58,12 +58,19 @@ WebCodecs (desktop Chrome and Edge do), only while someone is listening that
 way; where AAC is not available it falls back to WebM/Opus, which iPhones
 cannot play.
 
+## Web, Android and iPhone
+
+One client runs everywhere. `app/` wraps it for Android and iPhone (see
+[app/README.md](app/README.md)); GitHub Actions builds an APK and an iPhone
+build on every push. The Android app can also **host what other apps play**,
+which no phone browser allows.
+
 ## Requirements
 
 | | |
 |---|---|
 | **Host, sharing what is playing** | Desktop **Chrome or Edge**. No phone browser hands out another app's or tab's sound — a browser limitation, not a missing feature. |
-| **Host, from a phone** | Any phone: the host plays an audio file of their own into the room. |
+| **Host, from a phone** | The Android app: whatever plays on the phone. Any phone's browser: an audio file of their own. |
 | **Guest** | Any device, any browser, iPhone included. |
 
 ## Run it

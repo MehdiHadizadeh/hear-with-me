@@ -49,6 +49,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: npm ci
+      - name: Point the app at this build's server
+        run: node tools/point-at-server.mjs
       - run: npx cap sync android
       # Signed with the real key when the repository has it; otherwise with
       # the public test key in app/android/keystores, which is fine for
@@ -94,6 +96,8 @@ jobs:
         with:
           xcode-version: latest-stable
       - run: npm ci
+      - name: Point the app at this build's server
+        run: node tools/point-at-server.mjs
       - run: npx cap sync ios
       # Without an Apple developer account there is nothing to sign with, so
       # this is an unsigned build: re-signed and installed with a tool like
