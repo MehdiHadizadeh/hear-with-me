@@ -26,16 +26,24 @@ const pass = (msg) => console.log(`PASS: ${msg}`);
 const fail = (msg) => { failures++; console.log(`FAIL: ${msg}`); };
 const check = (ok, msg) => (ok ? pass(msg) : fail(msg));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Polls `test` until it is true or `ms` runs out; true if it ever was.
+const until = async (test, ms = 15000) => {
+  for (const end = Date.now() + ms; Date.now() < end; await sleep(500)) {
+    try { if (await test()) return true; } catch (e) { /* not yet */ }
+  }
+  return false;
+};
 
 const freePort = () => new Promise((resolve) => {
   const probe = net.createServer();
   probe.listen(0, () => { const { port } = probe.address(); probe.close(() => resolve(port)); });
 });
-const waitForServer = (url) => new Promise((resolve, reject) => {
-  const attempt = (n) => http.get(url, (res) => { res.resume(); resolve(); })
-    .on('error', () => (n <= 0 ? reject(new Error('server did not start')) : setTimeout(() => attempt(n - 1), 300)));
-  attempt(30);
-});
+// fetch, not http.get: BASE may be an https deployment.
+const waitForServer = async (url) => {
+  for (let i = 30; ; i--) {
+    try { await fetch(url); return; } catch (e) { if (i <= 0) throw new Error('server did not start'); await sleep(300); }
+  }
+};
 
 // A few seconds of a loud tone, as a file the host can pick.
 function toneWav(seconds = 30) {
@@ -141,8 +149,10 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     const hostLive = await host.waitForFunction(() => document.getElementById('hostTitle').textContent.includes('زنده'), null, { timeout: 15000 }).then(() => true, () => false);
     check(hostLive, 'the host is called live only once the signal check heard sound');
 
-    const page = await (await fetch(`${BASE}/r/${roomId}`)).text();
-    check(/og:title" content="مهدی داره زنده پخش می‌کنه"/.test(page), 'the link preview names the host and says it is live');
+    // Polled rather than read once: over a real network the host's name can
+    // arrive a couple of seconds after the share does.
+    const previewOk = await until(async () => /og:title" content="مهدی داره زنده پخش می‌کنه"/.test(await (await fetch(`${BASE}/r/${roomId}`)).text()));
+    check(previewOk, 'the link preview names the host and says it is live');
 
     // -- desktop guest choosing the screen-off path ------------------------
     const g1 = await open(`${BASE}/r/${roomId}?mode=relay`);
@@ -207,14 +217,16 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     // -- the host keeps everyone direct -------------------------------------
     await host.click('#roomSettings > summary');
     await host.check('#directOnlyToggle');
-    await sleep(3000);
+    const movedDirect = await until(async () => g1.evaluate(() => !!document.getElementById('remoteAudio').srcObject
+      && document.getElementById('guestStatusTitle').textContent.includes('زنده')), 25000);
     const pd = await probe(g1);
-    check(pd.path === 'direct' && loud(pd), 'turning "direct only" on moves relay listeners to the direct path');
+    check(movedDirect && pd.path === 'direct' && loud(pd), 'turning "direct only" on moves relay listeners to the direct path');
     await host.uncheck('#directOnlyToggle');
 
     // -- the microphone mixed in, and the guests keep their audio -----------
     await host.check('#micToggle');
     await sleep(2000);
+    await until(async () => g1.evaluate(() => document.getElementById('guestStatusTitle').textContent.includes('زنده')), 15000);
     const pm = await probe(g1);
     check(loud(pm), 'mixing the microphone in keeps the guest\'s audio');
     await host.uncheck('#micToggle');
@@ -244,11 +256,18 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     check(np.includes('hwm-tone'), 'the file names itself as what is playing');
 
     // -- the counters saw all of it ------------------------------------------
-    const stats = await (await fetch(`${BASE}/api/stats?token=t`)).json();
-    const day = Object.values(stats.days)[0] || {};
-    console.log('  counters:', JSON.stringify(day));
-    check(day['listen-started|path=relay'] >= 2 && day['listen-started|why=fallback'] >= 1, 'the counters recorded relay listens and the fallback');
-    check(day['share-started|source=file'] >= 1, 'and the file-hosted share');
+    // Readable only where STATS_TOKEN=t (the servers this test starts, and
+    // `wrangler dev` with .dev.vars); a deployment keeps its counters private.
+    const statsRes = await fetch(`${BASE}/api/stats?token=${process.env.STATS_TOKEN || 't'}`);
+    if (statsRes.status === 403) {
+      console.log('NOTE: counters are not readable on this deployment; skipped');
+    } else {
+      const stats = await statsRes.json();
+      const day = Object.values(stats.days).pop() || {};
+      console.log('  counters:', JSON.stringify(day));
+      check(day['listen-started|path=relay'] >= 2 && day['listen-started|why=fallback'] >= 1, 'the counters recorded relay listens and the fallback');
+      check(day['share-started|source=file'] >= 1, 'and the file-hosted share');
+    }
   } catch (e) {
     fail(`threw: ${e.stack}`);
   } finally {
