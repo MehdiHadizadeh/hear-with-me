@@ -24,14 +24,21 @@
 //   lib/http.js    bodies, JSON, static files
 
 import http from 'node:http';
-import { PORT } from './lib/config.js';
+import { PORT, SWEEP_INTERVAL_MS } from './lib/config.js';
+import { createMetrics } from './lib/metrics.js';
+import { createRateLimiter } from './lib/rate-limit.js';
 import { createRouter } from './lib/routes.js';
 import { Rooms } from './lib/rooms.js';
 
 const rooms = new Rooms();
 rooms.startSweeping();
 
-const server = http.createServer(createRouter(rooms));
+const limiter = createRateLimiter();
+const metrics = createMetrics();
+const housekeeping = setInterval(() => { limiter.sweep(); metrics.sweep(); }, SWEEP_INTERVAL_MS);
+housekeeping.unref();
+
+const server = http.createServer(createRouter(rooms, { limiter, metrics }));
 
 server.listen(PORT, () => {
   console.log(`Hear With Me listening on http://localhost:${PORT}`);

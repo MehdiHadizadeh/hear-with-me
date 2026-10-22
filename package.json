@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node test-rooms.js && node test-qr.js",
+    "test": "node test-rooms.js && node test-qr.js && node test-reach.js",
     "test:e2e": "node test-e2e.js",
     "assets": "node tools/make-assets.mjs"
   },
