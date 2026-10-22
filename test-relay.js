@@ -94,12 +94,18 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
 ).then(() => true, () => false);
 
 (async () => {
-  const PORT = await freePort();
-  const BASE = `http://localhost:${PORT}`;
-  const server = spawn(process.execPath, ['server.js'], {
-    cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'],
-    env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800', STATS_TOKEN: 't' },
-  });
+  // BASE=http://127.0.0.1:8787 runs the same checks against another server
+  // (the Cloudflare edition under `wrangler dev`, with STATS_TOKEN=t).
+  let BASE = process.env.BASE;
+  let server = null;
+  if (!BASE) {
+    const PORT = await freePort();
+    BASE = `http://localhost:${PORT}`;
+    server = spawn(process.execPath, ['server.js'], {
+      cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'],
+      env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800', STATS_TOKEN: 't' },
+    });
+  }
   const browser = await chromium.launch({
     args: [
       '--use-fake-device-for-media-stream',
@@ -237,7 +243,7 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     fail(`threw: ${e.stack}`);
   } finally {
     await browser.close();
-    server.kill();
+    if (server) server.kill();
     fs.rmSync(wav, { force: true });
     console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');
     process.exit(failures ? 1 : 0);

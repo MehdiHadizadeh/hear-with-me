@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.svg" width="72" alt="Hear With Me" />
   <h1>Hear With Me</h1>
-  <p><strong>Send whatever is playing on your desktop, live, to anyone with a link.</strong></p>
+  <p><strong>Whatever you hear, they hear too — live, from a link.</strong></p>
   <p>
     <a href="README.fa.md">فارسی</a> ·
     <img src="https://img.shields.io/badge/license-MIT-3FE0BE" alt="MIT" /> ·
@@ -14,16 +14,17 @@
 
 ## What this is
 
-You are listening to something on your computer — a Spotify tab, SoundCloud,
+You are listening to something on your computer — a Spotify tab, YouTube,
 a local file, a native app. You send one link. The other person opens it on
-their phone and hears exactly what you hear, at the same moment.
+their phone and hears what you hear, at the same moment — even with their
+phone locked in a pocket.
 
 **It is not a synced player and not a shared playlist.** Nobody picks a track.
-The host's real audio output is captured and streamed peer-to-peer over WebRTC,
-so whatever comes out of their speakers comes out of yours.
+The host's real audio output is captured in the browser and sent on, so
+whatever comes out of their speakers comes out of yours.
 
-The audio never passes through the server. The server creates rooms and relays
-signaling messages; that is all it can see.
+Nothing is stored: no accounts, no recordings, and a room leaves nothing behind
+when it closes.
 
 <table>
 <tr>
@@ -36,12 +37,34 @@ signaling messages; that is all it can see.
 </tr>
 </table>
 
+## Two paths for one sound
+
+| | Direct | Screen-off |
+|---|---|---|
+| How | WebRTC, browser to browser | AAC through the server, into a plain `<audio>` element |
+| Delay | under a tenth of a second | about two to four seconds |
+| Locked phone | stops (the OS treats it as a call) | keeps playing, with lock-screen controls |
+| Networks without UDP (common in Iran) | may never connect | works wherever the page loads |
+| The audio passes through the server | no | yes, in memory only; never stored |
+
+Phones start on screen-off, desktops on direct, and either can switch at any
+time from the chip on the stage. A direct connection that is not up within six
+seconds falls back to screen-off by itself, and says so. The host can keep a
+room **direct only** from its settings.
+
+Screen-off is AAC because every phone plays an AAC stream — iPhones included —
+and a listener can start at any frame. The host's browser encodes it with
+WebCodecs (desktop Chrome and Edge do), only while someone is listening that
+way; where AAC is not available it falls back to WebM/Opus, which iPhones
+cannot play.
+
 ## Requirements
 
 | | |
 |---|---|
-| **Host** (sends the audio) | Desktop **Chrome or Edge**. No mobile browser exposes tab or system audio capture — a browser limitation, not a missing feature. |
-| **Guest** (listens) | Any device, any browser. Receiving a WebRTC stream is universally supported. |
+| **Host, sharing what is playing** | Desktop **Chrome or Edge**. No phone browser hands out another app's or tab's sound — a browser limitation, not a missing feature. |
+| **Host, from a phone** | Any phone: the host plays an audio file of their own into the room. |
+| **Guest** | Any device, any browser, iPhone included. |
 
 ## Run it
 
@@ -53,73 +76,76 @@ Then open `http://localhost:3000`. There is nothing to install: no npm
 dependencies at runtime and no build step.
 
 To try it across two real devices, the server has to be reachable over
-**HTTPS** — `getDisplayMedia` and `RTCPeerConnection` only work in a secure
-context, and `localhost` is the single exception:
+**HTTPS** — `getDisplayMedia`, WebCodecs and `RTCPeerConnection` only work in
+a secure context, and `localhost` is the single exception:
 
 ```bash
 ssh -R 80:localhost:3000 nokey@localhost.run
 ```
 
 > **Note:** Cloudflare quick tunnels (`trycloudflare.com`) do not work. They
-> buffer the whole response body, and this app's signaling is Server-Sent
+> buffer the whole response body, and this server's signaling is Server-Sent
 > Events, so the browser receives nothing and the room hangs on "connecting".
 
 ## What a room can do
 
 **Host**
 
-- Switch the captured tab mid-session — `replaceTrack`, so no guest drops out.
-- Set the audio quality (256 / 128 / 64 kbps) for the whole room.
-- Lock the room, remove a guest, or hand hosting to a specific guest.
-- End the room on leaving, instead of promoting whoever joined first.
-- Show a QR code — the host is on a desktop, the guest is holding a camera.
+- Rehearse Chrome's picker before it opens — the one switch ("Share tab audio")
+  that decides whether anyone hears anything — then a signal check: the room is
+  called live only once sound is actually heard.
+- Switch the source mid-session — `replaceTrack`, so no guest drops out.
+- Play a file from this device instead; mix their own microphone in.
+- Set the audio quality, lock the room, remove a guest, hand hosting over,
+  end the room on leaving, keep it direct-only.
+- Their name goes into the link preview: "Mehdi is playing live".
+- Two columns on a desktop, with the QR code beside the stage.
 
 **Guest**
 
-- React: ❤ / 🔥 / "what is this?" / "too quiet" / "breaking up" / "no sound".
-  Cheers float over the stage; anything the host must act on stays put and says
-  what to do about it.
-- Pick a name, so the host sees who is who.
-- Ask for a lower bitrate on mobile data — only that guest's stream narrows.
-- Keep the screen awake, which removes the most common way playback dies on a
-  phone.
-
-**Both sides** see a level meter read from the audio's own spectrum — the one
-indicator that can tell "connected" from "connected but silent" — and a
-connection-quality reading taken from `getStats`.
+- The page leads with who is playing, then one tap to listen, choosing between
+  screen-off and direct with the cost of each said plainly.
+- React: ❤️ / 🔥 / "what is this?" / "no sound", and two more behind "more".
+  Anything the host must act on stays put and says what to do about it.
+- Car mode: the host's name, the state, and one big button.
+- When it ends: how long they listened, a link to send to their own computer,
+  and a story card.
 
 ## How it works
 
 ```
-Audio source (anything)
+Audio source (anything)           or a file on the host's device
         │
-Platform capture          ← host's browser only: getDisplayMedia
+Capture                     ← host's browser: getDisplayMedia, or Web Audio for a file
         │
-WebRTC (peer-to-peer)     ← the audio, directly between two browsers
-        │
-Room layer (this server)  ← signaling only; never sees audio
-        │
-Playback                  ← any browser, any device
+   ┌────┴────────────────────────────┐
+WebRTC (direct)              AAC encoder (WebCodecs), only on demand
+   │                                 │
+   │                         Room server: framing + fan-out, in memory
+   │                                 │
+Guest: srcObject             Guest: <audio src>, survives a locked screen
 ```
 
-The server does four things: it creates rooms, decides who the host is, relays
-"sharing started/stopped", and passes WebRTC offers, answers and ICE candidates
-between members.
-
-That last channel can be either **Server-Sent Events** or a **WebSocket**: the
-page carries a `transport` meta tag that the server fills in, and the client
-speaks both. This server uses SSE, which is what a long-lived process does
-best; an edge runtime that cannot hold a response open can serve the same
-client and say `ws` instead.
+The server creates rooms, decides who the host is, relays signaling, and — for
+screen-off listeners only — passes the host's encoded audio on. It reaches
+members over **Server-Sent Events** or a **WebSocket**: the page carries a
+`transport` meta tag that the server fills in, and the client speaks both. An
+edge runtime that cannot hold a response open serves the same client with `ws`.
 
 ```
 server.js          wiring
-lib/               config · room (a Room class) · rooms · routes · sse · http
+lib/               config · room · rooms · routes · sse · http · rate-limit · metrics
 public/app.js      client entry — roles and event routing, no logic
-public/js/         host-session · guest-session · dom · api · roster · notices ·
-                   audio-meter · audio-quality · connection-quality · wake-lock · …
-public/shared/     reactions · room-code — one definition, used by both sides
+public/js/         host-session · guest-session · relay-encoder · relay-player · platform ·
+                   dom · api · roster · notices · audio-meter · end-card · car-mode · …
+public/shared/     reactions · room-code · relay-framing · preview · metrics —
+                   one definition each, used by the server(s) and the page
+public/sw.js       the app shell, for installing; never touches /api/
 ```
+
+`public/js/platform.js` is the one place that knows what the device can do. An
+app shell (Capacitor, for Android and later iPhone) would replace that seam to
+let a phone capture other apps' sound natively.
 
 ## Configuration
 
@@ -130,36 +156,40 @@ public/shared/     reactions · room-code — one definition, used by both sides
 | `TURN_URL` · `TURN_USERNAME` · `TURN_PASSWORD` | — | Added to what clients receive |
 | `MAX_ROOMS` | `500` | Concurrent rooms |
 | `ROOMS_PER_IP` | `12` | Room creations per IP per 10 minutes |
+| `API_REQUESTS_PER_MINUTE` | `900` | Every API call, per IP |
+| `ROOM_LOOKUPS_PER_MINUTE` | `60` | Looking a room up by code, per IP |
 | `DISCONNECT_GRACE_MS` | `10000` | How long a dropped connection keeps its place |
+| `RELAY_BACKLOG_MS` | `1500` | How much audio a screen-off listener starts with |
+| `STATS_TOKEN` | — | Lets `GET /api/stats?token=…` read the counters |
 
-Clients fetch ICE configuration from `GET /api/ice` at startup, so adding a
-TURN server is an environment variable and a restart — not a client change.
+**Counters.** The page reports a few named events — a listen started and on
+which path, a direct connection that failed and what ICE had found, a share
+that was silent — and the server keeps one number per day, event and value.
+No ids, names, codes or addresses; anything outside the allowlist in
+`public/shared/metrics.js` is dropped.
 
 ## Tests
 
 ```bash
-npm test                                              # room layer + QR encoder
+npm test                                              # rooms, QR, relay framing, previews, limits
 npm install --no-save playwright && npx playwright install chromium
-npm run test:e2e                                      # real WebRTC, host + 2 guests
+npm run test:e2e                                      # real browsers, both paths
 ```
 
-The end-to-end test drives a real host and two real guests with a fake audio
-device: both get live audio, switching the source disturbs neither, one guest's
-quality request narrows only their own stream, and the level meters actually
-respond to sound.
+`test-e2e.js` drives a real host and two guests over WebRTC. `test-relay.js`
+covers the rest in real browsers: screen-off audio arriving as AAC, the
+fallback when a direct connection never comes up, a phone's first tap, the
+host's direct-only switch, the microphone, the end card, and a phone hosting
+from a file. Point it at another deployment with `BASE=…`.
 
 ## Limits worth knowing
 
-- **A guest's phone stops playback when locked or backgrounded.** The OS
-  classifies a real-time stream as a call, and a call is suspended when you
-  leave the app. The screen wake lock covers the common case; nothing covers
-  the rest. Returning to the tab reconnects automatically.
-- **No TURN server by default.** A small share of restrictive networks will
-  fail to connect until one is configured.
+- **Whether a locked phone keeps playing is only proven on a phone.** The
+  screen-off path is built exactly the way internet radio is, which phones do
+  play in the background; desktop browsers cannot show it.
+- **A phone cannot share another app's sound** from a browser. A native
+  Android app could (`MediaProjection` + `AudioPlaybackCapture`); it is not
+  built yet.
 - **The room code is the only protection.** Locking and removing are social
-  controls, not security. Fine for friends; do not post a room link publicly.
+  controls, not security.
 - **Nothing is stored.** Restarting the server clears every room.
-
-## License
-
-MIT
