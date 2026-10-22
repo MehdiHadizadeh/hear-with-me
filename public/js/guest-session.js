@@ -353,7 +353,7 @@ export function createGuestSession({
 
   function showGate() {
     renderModeChoice();
-    show(ui.listenGate, true);
+    show(ui.listenGate, true, 'grid');
   }
 
   function choose(next) {
@@ -414,9 +414,16 @@ export function createGuestSession({
     publishMediaSession(text);
   }
 
-  function renderWho(sharing) {
+  // `state`: 'live', 'waiting' or 'ended'.
+  let whoState = 'waiting';
+  function renderWho(state = whoState) {
+    whoState = state;
     const name = hostName || 'یکی';
-    ui.guestWho.textContent = sharing ? `${name} داره برات پخش می‌کنه` : `${name} هنوز پخش رو شروع نکرده`;
+    ui.guestWho.textContent = {
+      live: `${name} داره برات پخش می‌کنه`,
+      waiting: `${name} هنوز پخش رو شروع نکرده`,
+      ended: `${name} پخش رو تموم کرد`,
+    }[state];
   }
 
   // The lock screen and the notification shade show this. On the relay path
@@ -541,7 +548,7 @@ export function createGuestSession({
     },
     setHostName(name) {
       hostName = name || '';
-      renderWho(wantListening);
+      renderWho();
       publishMediaSession(ui.guestNowPlaying.textContent.replace(/^الان/, ''));
     },
 
@@ -555,7 +562,7 @@ export function createGuestSession({
 
     waitForHost() {
       wantListening = false;
-      renderWho(false);
+      renderWho('waiting');
       setStage(ui.guestStage, 'waiting');
       ui.guestStatusTitle.textContent = 'در انتظار میزبان';
       ui.guestStatusSub.textContent = 'وقتی پخش شروع بشه، همین‌جا می‌شنوی.';
@@ -567,7 +574,7 @@ export function createGuestSession({
     // that is still healthy must not be rebuilt for it.
     startListening({ reconnect = true } = {}) {
       wantListening = true;
-      renderWho(true);
+      renderWho('live');
       show(ui.endCard, false);
       if (reconnect) connect();
     },
@@ -577,7 +584,7 @@ export function createGuestSession({
       wantListening = false;
       const listened = finishListening();
       teardown();
-      renderWho(false);
+      renderWho('ended');
       setStage(ui.guestStage, 'stopped');
       ui.guestStatusTitle.textContent = 'پخش تموم شد';
       ui.guestStatusSub.textContent = 'اگه میزبان دوباره شروع کنه، خودکار وصل می‌شی.';

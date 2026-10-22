@@ -131,12 +131,14 @@ export function createEndCard({ ui, notices }) {
   return {
     // Only worth showing after a real listen: a guest who heard nothing has
     // nothing to remember.
-    show(ms, hostName) {
+    show(ms, hostName, source) {
       listenedMs = ms;
       ui.endDuration.textContent = `${formatClock(ms)} با هم شنیدید`;
+      // A file played from a phone is not "from someone's computer".
+      const device = source === 'file' ? 'گوشی' : 'کامپیوتر';
       ui.endTitle.textContent = hostName
-        ? `این صدا از کامپیوتر ${hostName} می‌اومد. تو هم می‌تونی.`
-        : 'این صدا از کامپیوتر یه نفر می‌اومد. تو هم می‌تونی.';
+        ? `این صدا از ${device} ${hostName} می‌اومد. تو هم می‌تونی.`
+        : `این صدا از ${device} یه نفر می‌اومد. تو هم می‌تونی.`;
       show(ui.endCard, true);
     },
     hide() { show(ui.endCard, false); },

@@ -91,6 +91,7 @@ let isHost = false;
 let sharingNow = false;
 let terminated = false;
 let hostName = '';
+let shareSource = null; // what the current share is playing from
 
 // ---------------------------------------------------------------------------
 // Which half of the room we are
@@ -225,6 +226,7 @@ events.on('welcome', (data) => {
   if (ui.nameInput.value) api.setName(ui.nameInput.value); // we already know what to call ourselves
   guest.renderNowPlaying(data.nowPlaying);
   guest.applyShare({ relayFormat: data.relayFormat });
+  shareSource = data.shareSource;
 
   if (!data.isSharing) { guest.waitForHost(); return; }
   // Late joiners pick the timer up mid-session rather than from zero.
@@ -238,6 +240,7 @@ events.on('sharing-started', (data) => {
   endCard.hide();
   guest.renderNowPlaying('');
   guest.applyShare({ relayFormat: data.relayFormat });
+  shareSource = data.shareSource;
   guestTimer.start(0);
   guest.startListening();
 });
@@ -246,7 +249,7 @@ events.on('sharing-stopped', () => {
   sharingNow = false;
   if (isHost) return;
   const listened = guest.handleSharingStopped();
-  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName);
+  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName, shareSource);
 });
 
 events.on('now-playing', ({ text }) => {
