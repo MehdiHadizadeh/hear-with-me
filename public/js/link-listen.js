@@ -26,6 +26,7 @@ export function createLinkListen({ ui, notices, onChange = () => {} }) {
   let userPaused = false;
   let ownActionAt = 0;
   let syncTimer = null;
+  let loads = 0;        // only the newest load may install its player
 
   const providerName = () => (state ? PROVIDER_NAMES[state.track.provider] : '');
   const target = () => trackPositionNow(state.track, state.serverNow, state.receivedAt);
@@ -105,15 +106,17 @@ export function createLinkListen({ ui, notices, onChange = () => {} }) {
   async function loadPlayer(track) {
     teardown();
     url = track.url;
+    const load = ++loads;
     render();
     try {
       const made = await createLinkPlayer(track, ui.guestLinkPlayer, { onState: onPlayerState });
-      if (url !== track.url) { made.destroy(); return; }
+      if (load !== loads) { made.destroy(); return; }
       player = made;
       syncTimer = setInterval(sync, SYNC_EVERY_MS);
       render();
       sync();
     } catch (e) {
+      if (load !== loads) return; // a newer load is under way
       url = null;
       render();
       ui.linkStatus.textContent = '';

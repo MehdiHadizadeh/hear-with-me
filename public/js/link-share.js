@@ -15,7 +15,7 @@ import { canCaptureNativeAudio } from './platform.js';
 
 // While playing, the position goes out now and then even without a change, so
 // a guest who drifted has something recent to measure against.
-const HEARTBEAT_MS = 8000;
+const HEARTBEAT_MS = 5000;
 // How long the app's capture gets to hear the player before guests are
 // switched to their own players.
 const RELAY_PROOF_MS = 9000;
@@ -29,6 +29,7 @@ export function createLinkShare({ ui, api, notices, host }) {
   let heartbeat = null;
   let proofTimer = null;
   let lastTitle = '';
+  let loads = 0;        // only the newest load may install its player
 
   function setStatus(text) { ui.hostLinkStatus.textContent = text; }
 
@@ -76,13 +77,7 @@ export function createLinkShare({ ui, api, notices, host }) {
   async function onPlayerState({ playing, positionMs, index = 0, ended }) {
     setStatus(ended ? 'تموم شد' : playing ? 'داره برای همه پخش می‌شه' : 'مکث');
     send({ playing: playing && !ended, positionMs: ended ? 0 : positionMs, index });
-    clearInterval(heartbeat);
-    heartbeat = null;
     if (!playing || ended) return;
-    heartbeat = setInterval(async () => {
-      if (!player || !player.playing) return;
-      send({ playing: true, positionMs: await player.position(), index: await player.index() });
-    }, HEARTBEAT_MS);
 
     // Guests see what is playing, as the service names it.
     const title = await player.title().catch(() => null);
@@ -98,15 +93,25 @@ export function createLinkShare({ ui, api, notices, host }) {
   async function loadPlayer(next, startAt = 0) {
     teardownPlayer();
     url = next.url;
+    const load = ++loads;
     setStatus('در حال باز کردن پخش‌کننده...');
     try {
       const made = await createLinkPlayer(next, ui.hostLinkPlayer, { onState: onPlayerState });
-      if (url !== next.url) { made.destroy(); return; } // replaced while loading
+      if (load !== loads) { made.destroy(); return; } // replaced while loading
       player = made;
+      // Now and then, what the player is really doing, whatever its events
+      // said: a missed or misordered event heals here, not never.
+      heartbeat = setInterval(async () => {
+        if (!player || !track) return;
+        const playing = await player.isPlaying();
+        if (!playing && !track.playing) return;
+        send({ playing, positionMs: await player.position(), index: await player.index() });
+      }, HEARTBEAT_MS);
       if (next.index > 0) player.skipTo(next.index);
       if (startAt > 0) player.seek(startAt);
       setStatus('دکمه‌ی پخش رو بزن');
     } catch (e) {
+      if (load !== loads) return; // a newer load is under way
       setStatus('');
       ui.hostLinkPlayer.textContent = '';
       notices.showError(`پخش‌کننده‌ی ${PROVIDER_NAMES[next.provider]} باز نشد. اگه این سرویس تو اینترنتت فیلتره، با VPN امتحان کن.`);
@@ -137,7 +142,9 @@ export function createLinkShare({ ui, api, notices, host }) {
     ({ track } = await res.json());
     ui.linkInput.value = '';
     render();
-    loadPlayer(track);
+    // The room's own announcement of this track may have beaten this reply
+    // here and loaded it already.
+    if (url !== track.url) loadPlayer(track);
   });
 
   // Said before the link is pasted: who will need what to hear it.

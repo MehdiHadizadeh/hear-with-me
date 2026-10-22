@@ -7,6 +7,7 @@
 //   await player.index();      // which item of a playlist or set (0 otherwise)
 //   player.skipTo(i);
 //   await player.title();      // what is playing, where the service says
+//   await player.isPlaying();  // asked of the player now, not remembered
 //   player.playing;            // as the player last reported it
 //   player.destroy();
 //
@@ -67,7 +68,15 @@ async function soundcloud(track, container, onState) {
   widget.bind(E.SEEK, () => report());
   // The end of one item in a set is not the end: the next one starts and
   // reports itself. Only the last item's end stops anything.
-  widget.bind(E.FINISH, () => { playing = false; setTimeout(() => { if (!playing) report({ ended: true }); }, 1500); });
+  // Events arrive out of order on a slow connection (a FINISH after the next
+  // item's PLAY), so an end is only believed once the player says so.
+  const isPlaying = () => new Promise((resolve) => widget.isPaused((paused) => resolve(!paused)));
+  widget.bind(E.FINISH, () => {
+    setTimeout(async () => {
+      playing = await isPlaying();
+      if (!playing) report({ ended: true });
+    }, 1500);
+  });
 
   return {
     get playing() { return playing; },
@@ -76,6 +85,7 @@ async function soundcloud(track, container, onState) {
     seek: (ms) => widget.seekTo(Math.max(0, ms)),
     position,
     index,
+    isPlaying,
     skipTo: (i) => widget.skip(i),
     title: () => new Promise((resolve) => widget.getCurrentSound((sound) => resolve(sound
       ? [sound.user && sound.user.username, sound.title].filter(Boolean).join(' — ')
@@ -127,6 +137,7 @@ async function spotify(track, container, onState) {
     position: async () => last.position + (playing ? Date.now() - last.at : 0),
     // The embed has no way to say or choose which item of a playlist plays.
     index: async () => 0,
+    isPlaying: async () => playing,
     skipTo: () => {},
     title: async () => null,
     destroy: () => { try { controller.destroy(); } catch (e) { holder.remove(); } },
@@ -178,6 +189,7 @@ async function youtube(track, container, onState) {
     seek: (ms) => player.seekTo(Math.max(0, ms) / 1000, true),
     position: async () => Math.round((player.getCurrentTime() || 0) * 1000),
     index: async () => Math.max(0, (player.getPlaylistIndex && player.getPlaylistIndex()) || 0),
+    isPlaying: async () => player.getPlayerState() === YT.PlayerState.PLAYING,
     skipTo: (i) => { if (list) player.playVideoAt(i); },
     title: async () => { try { return (player.getVideoData() || {}).title || null; } catch (e) { return null; } },
     destroy: () => { try { player.destroy(); } catch (e) { /* gone */ } holder.remove(); },
