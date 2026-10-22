@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 22
       - name: Room, QR, relay, preview and limit tests
-        run: npm test
+        run: |
+          npm install --no-save jsqr@1.4.0
+          npm test
       - name: Browser tests (real WebRTC and the screen-off relay)
         run: |
           npm install --no-save playwright

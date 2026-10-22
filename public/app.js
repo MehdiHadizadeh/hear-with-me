@@ -15,7 +15,7 @@
 //   end-card / car-mode / metrics     what a guest keeps, a dashboard view, and what we count
 
 import { REACTIONS } from './shared/reactions.js';
-import { show, ui } from './js/dom.js';
+import { setStage, show, ui } from './js/dom.js';
 import { faDigits } from './js/format.js';
 import { prefs } from './js/prefs.js';
 import { isTouchDevice } from './js/platform.js';
@@ -36,6 +36,9 @@ import { setupInvite } from './js/invite.js';
 import { createEndCard } from './js/end-card.js';
 import { createCarMode } from './js/car-mode.js';
 import { report } from './js/metrics.js';
+import { createLinkShare } from './js/link-share.js';
+import { createLinkListen } from './js/link-listen.js';
+import { PROVIDER_NAMES } from './shared/links.js';
 
 const REACTION_COOLDOWN_MS = 1000; // the server refuses anything faster anyway
 const NAME_DEBOUNCE_MS = 600;      // typing is not an event worth a request per keystroke
@@ -83,6 +86,9 @@ const guest = createGuestSession({
   timer: guestTimer,
 });
 
+const linkShare = createLinkShare({ ui, api, notices });
+const linkListen = createLinkListen({ ui, notices, onChange: () => updateLinkLayout() });
+
 setupInvite({ ui, roomId, notices });
 const endCard = createEndCard({ ui, notices });
 const carMode = createCarMode({ ui, guest });
@@ -105,13 +111,45 @@ function showRole(asHost) {
   ui.roomShell.classList.toggle('is-host', asHost);
   ui.roomShell.classList.toggle('is-guest', !asHost);
   show(ui.copyLinkBtn, asHost, 'grid');
+  show(ui.leaveBtn, true, 'inline-flex');
   ui.codePlate.classList.toggle('is-bare', !asHost);
   show(ui.statusRow, asHost, 'flex');
   roster.setHostView(asHost);
 }
 
 // The guest page leads with who is playing; that name comes from the roster.
+// Listening by link sits beside the audio stream, not inside it: a host can
+// talk over the mic while everyone plays the same SoundCloud track. With only
+// the link on, the guest's stream controls have nothing to do and step aside.
+let currentTrack = null;
+function updateLinkLayout() {
+  const linkOn = !!currentTrack;
+  ui.guestCard.classList.toggle('is-link-only', !isHost && linkOn && !sharingNow);
+  // The tab-picking rehearsal is about the other way of sharing.
+  ui.hostCard.classList.toggle('has-link', isHost && linkOn);
+  if (!isHost) { guest.setLinkLive(linkOn); return; }
+  if (host.isSharing()) return;
+  if (linkOn) {
+    setStage(ui.hostStage, 'live');
+    ui.hostTitle.textContent = 'با هم گوش می‌دید';
+    ui.hostStatus.textContent = `آهنگ از ${PROVIDER_NAMES[currentTrack.provider]} برای همه پخش می‌شه. میکروفون رو هم می‌تونی روشن کنی.`;
+  } else {
+    setStage(ui.hostStage, 'idle');
+    ui.hostTitle.textContent = 'تو میزبان این اتاقی';
+    ui.hostStatus.textContent = 'هنوز چیزی پخش نمی‌شه.';
+  }
+}
+
+function applyTrack(track, serverNow) {
+  currentTrack = track || null;
+  if (isHost) { linkListen.reset(); linkShare.apply(currentTrack, serverNow); }
+  else { linkShare.reset(); linkListen.apply(currentTrack, serverNow); }
+  updateLinkLayout();
+}
+
+let guestCount = 0;
 function updateHostName(members) {
+  guestCount = (members || []).filter((m) => !m.isHost).length;
   const hostMember = (members || []).find((m) => m.isHost);
   hostName = (hostMember && hostMember.name) || '';
   guest.setHostName(hostName);
@@ -182,6 +220,7 @@ function showDeadEnd(title, sub) {
   ui.qrPanel.hidden = true;
   ui.qrBtn.setAttribute('aria-expanded', 'false');
   show(ui.copyLinkBtn, false);
+  show(ui.leaveBtn, false);
   ui.codePlate.classList.add('is-bare');
   show(ui.listenerPill, false);
   show(ui.qualityPill, false);
@@ -199,11 +238,50 @@ function endRoom(title, sub) {
   events.close();
   host.endRoom();
   guest.endRoom();
+  linkShare.reset();
+  linkListen.reset();
 
   showDeadEnd(title, sub);
   ui.connectionPill.classList.remove('live');
   ui.connectionText.textContent = 'اتاق تمام شد';
 }
+
+// Leaving from the header. A guest just goes, and can come back by the same
+// link. The host is asked first: for them it ends the room for everyone, or
+// hands it on if they chose that in the settings.
+function leaveRoom() {
+  const wasHost = isHost;
+  terminated = true;
+  api.leave();
+  events.close();
+  host.endRoom();
+  guest.endRoom();
+  linkShare.reset();
+  linkListen.reset();
+  wakeLock.release();
+  if (wasHost) { window.location.href = '/'; return; }
+  showDeadEnd('از اتاق اومدی بیرون', 'هر وقت خواستی، با همین لینک برگرد.');
+  ui.notFoundCta.textContent = 'برگشت به اتاق';
+  ui.notFoundCta.href = window.location.pathname;
+  ui.connectionText.textContent = 'بیرون اومدی';
+}
+
+ui.leaveBtn.addEventListener('click', () => {
+  if (!isHost || !ui.leaveDialog.showModal) { leaveRoom(); return; }
+  const handOver = ui.handOverToggle.checked && guestCount > 0;
+  ui.leaveDialogTitle.textContent = handOver ? 'میزبانی رو می‌سپری و می‌ری؟' : 'اتاق بسته بشه؟';
+  ui.leaveDialogSub.textContent = handOver
+    ? 'پخش قطع می‌شه و میزبانی به نفر بعدی می‌رسه.'
+    : guestCount > 0
+      ? `پخش برای ${faDigits(guestCount)} نفر قطع می‌شه و اتاق بسته می‌شه. لینکش دیگه کار نمی‌کنه.`
+      : 'اتاق بسته می‌شه و لینکش دیگه کار نمی‌کنه.';
+  ui.leaveConfirmBtn.textContent = handOver ? 'سپردن و خروج' : 'بستن اتاق و خروج';
+  ui.leaveDialog.returnValue = '';
+  ui.leaveDialog.showModal();
+});
+ui.leaveDialog.addEventListener('close', () => {
+  if (ui.leaveDialog.returnValue === 'leave') leaveRoom();
+});
 
 // ---------------------------------------------------------------------------
 // Everything the room tells us
@@ -219,6 +297,7 @@ events.on('welcome', (data) => {
   updateHostName(data.members);
   host.applySettings(data.settings);
   guest.applySettings(data.settings);
+  applyTrack(data.track, data.serverNow);
 
   if (isHost) {
     stats.stop(); // a fresh host isn't sending anything yet
@@ -237,8 +316,11 @@ events.on('welcome', (data) => {
   guest.startListening({ reconnect: !guest.isHealthy() });
 });
 
+events.on('track', ({ track, serverNow }) => applyTrack(track, serverNow));
+
 events.on('sharing-started', (data) => {
   sharingNow = true;
+  updateLinkLayout();
   if (isHost) return;
   endCard.hide();
   guest.renderNowPlaying('');
@@ -249,9 +331,11 @@ events.on('sharing-started', (data) => {
 
 events.on('sharing-stopped', () => {
   sharingNow = false;
-  if (isHost) return;
+  if (isHost) { updateLinkLayout(); return; }
   const listened = guest.handleSharingStopped();
-  if (listened >= END_CARD_MIN_MS) endCard.show(listened, hostName);
+  updateLinkLayout();
+  // The host only switched the mic off; the song plays on.
+  if (listened >= END_CARD_MIN_MS && !currentTrack) endCard.show(listened, hostName);
 });
 
 events.on('now-playing', ({ text }) => {
@@ -310,6 +394,7 @@ events.on('reaction', ({ from, kind }) => {
 
 events.on('you-are-host', ({ reason }) => {
   guest.stopListening();
+  linkListen.reset();
   showRole(true);
   host.activate({ fresh: true });
   host.announceName();
@@ -326,6 +411,7 @@ events.on('you-are-host', ({ reason }) => {
 events.on('host-changed', ({ hostId }) => {
   if (!isHost || hostId === identity.clientId) return;
   host.deactivate();
+  linkShare.reset();
   showRole(false);
   guest.becomeListener();
   notices.showInfo('میزبانی اتاق به یک نفر دیگه منتقل شد.');

@@ -252,17 +252,19 @@ function formatBits(mask) {
 function drawFormat(m, size, mask) {
   const bits = formatBits(mask);
   const bit = (i) => ((bits >>> i) & 1) === 1;
-  // Copy one: around the top-left finder.
-  for (let i = 0; i <= 5; i++) m.modules[8][i] = bit(i);
-  m.modules[8][7] = bit(6);
+  // Copy one: around the top-left finder — bits 0-7 down column 8 (skipping
+  // the timing row), bits 8-14 leftward along row 8 (skipping the timing
+  // column). Rows and columns are easy to swap here, and a swapped copy
+  // looks fine on screen and scans as nothing.
+  for (let i = 0; i <= 5; i++) m.modules[i][8] = bit(i);
+  m.modules[7][8] = bit(6);
   m.modules[8][8] = bit(7);
-  m.modules[7][8] = bit(8);
-  for (let i = 9; i <= 14; i++) m.modules[14 - i][8] = bit(i);
-  // Copy two: seven modules climbing the column above the bottom-left finder
-  // (stopping just below the dark module), then eight running to the right
-  // edge along row 8. Fifteen cells, and the dark module is not one of them.
-  for (let i = 0; i <= 6; i++) m.modules[size - 1 - i][8] = bit(i);
-  for (let i = 7; i <= 14; i++) m.modules[8][size - 15 + i] = bit(i);
+  m.modules[8][7] = bit(8);
+  for (let i = 9; i <= 14; i++) m.modules[8][14 - i] = bit(i);
+  // Copy two: bits 0-7 along row 8 from the right edge, then bits 8-14 down
+  // column 8 under the dark module to the bottom edge.
+  for (let i = 0; i <= 7; i++) m.modules[8][size - 1 - i] = bit(i);
+  for (let i = 8; i <= 14; i++) m.modules[size - 15 + i][8] = bit(i);
   m.modules[size - 8][8] = true; // dark module, never masked
 }
 
@@ -340,7 +342,7 @@ export function matrix(text) {
 // any size and costs nothing to render.
 export function svg(text, options) {
   const opts = options || {};
-  const quiet = opts.quiet === undefined ? 2 : opts.quiet; // modules of margin
+  const quiet = opts.quiet === undefined ? 4 : opts.quiet; // modules of margin; scanners want four
   const { modules, size } = matrix(text);
   const dim = size + quiet * 2;
 

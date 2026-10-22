@@ -54,6 +54,18 @@ export function createRoomApi(roomId, identity) {
     react: (kind) => post('/reaction', { kind }),
     updateSettings: (settings) => post('/settings', settings),
     kick: (targetId) => post('/kick', { targetId }),
+    setTrack: (url) => post('/track', { url }),
+    updateTrack: (state) => post('/track', state),
+    clearTrack: () => post('/track', { clear: true }),
+    // Sent as a beacon too when there is one: the page may be gone a moment
+    // after the tap, and the room should still hear it.
+    leave() {
+      const body = JSON.stringify({ clientId, secret });
+      try {
+        if (navigator.sendBeacon && navigator.sendBeacon(`${base}/leave`, new Blob([body], { type: 'application/json' }))) return Promise.resolve();
+      } catch (e) { /* fall through to fetch */ }
+      return post('/leave', {});
+    },
     makeHost: (targetId) => post('/host', { targetId }),
     signal: (to, type, payload) => post('/signal', { to, type, payload }),
 

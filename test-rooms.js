@@ -310,6 +310,8 @@ async function testRealDeparture() {
   await host.ready;
   const guest = join(roomId, 'guest', 's2');
   await guest.ready;
+  // Handing the room on is the host's choice now; by default it closes.
+  await request('POST', `/api/rooms/${roomId}/settings`, { clientId: 'host', secret: 's1', closeOnHostLeave: false });
   await request('POST', `/api/rooms/${roomId}/sharing`, { clientId: 'host', secret: 's1', action: 'start' });
   await sleep(100);
   guest.events.length = 0;
@@ -498,7 +500,7 @@ async function testHostControls() {
   await sleep(GRACE + 200);
 }
 
-// The alternative to handing a stranger someone else's room when they leave.
+// The default: a room ends with its host, rather than going to a stranger.
 async function testCloseOnHostLeave() {
   console.log('\nclosing the room on the host leaving');
   const roomId = await newRoom();
@@ -508,7 +510,6 @@ async function testCloseOnHostLeave() {
   await guest.ready;
   await sleep(60);
 
-  await request('POST', `/api/rooms/${roomId}/settings`, { clientId: 'h', secret: 's-h', closeOnHostLeave: true });
   host.drop();
   await sleep(GRACE + 300);
 
@@ -516,6 +517,69 @@ async function testCloseOnHostLeave() {
   check('the guest is not promoted', !guest.saw('you-are-host'));
   const gone = await request('GET', `/api/rooms/${roomId}`);
   check('the room itself is gone', gone.status === 404, gone.status);
+}
+
+// Listening by link: the host sets a track, its state reaches every guest,
+// and a late joiner gets it in their welcome.
+async function testTrack() {
+  console.log('\nlistening by link');
+  const roomId = await newRoom();
+  const host = join(roomId, 'h', 's-h');
+  await host.ready;
+  const guest = join(roomId, 'g', 's-g');
+  await guest.ready;
+  await sleep(60);
+
+  const bad = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', url: 'https://example.com/song' });
+  check('a link we cannot play is refused', bad.status === 400, bad.status);
+  const notHost = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'g', secret: 's-g', url: 'https://soundcloud.com/a/b' });
+  check('only the host sets the track', notHost.status === 403, notHost.status);
+
+  const set = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', url: 'https://m.soundcloud.com/a/b?si=x' });
+  check('the host sets a track, canonical and paused', set.status === 200 && set.json.track.url === 'https://soundcloud.com/a/b' && set.json.track.playing === false, set.json);
+  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', playing: true, positionMs: 42000 });
+  await sleep(60);
+  const last = guest.events.filter((e) => e.event === 'track').pop();
+  check('guests hear play and position', last && last.data.track.playing === true && last.data.track.positionMs === 42000 && typeof last.data.serverNow === 'number', last && last.data);
+
+  const late = join(roomId, 'l', 's-l');
+  await late.ready;
+  const welcome = late.events.find((e) => e.event === 'welcome');
+  check('a late joiner gets the track in the welcome', welcome && welcome.data.track && welcome.data.track.playing === true, welcome && welcome.data.track);
+
+  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', clear: true });
+  await sleep(60);
+  const cleared = guest.events.filter((e) => e.event === 'track').pop();
+  check('clearing reaches guests', cleared && cleared.data.track === null, cleared && cleared.data);
+  host.drop(); guest.drop(); late.drop();
+}
+
+// The leave button: no grace period, for a guest or for the host.
+async function testLeaveButton() {
+  console.log('\nleaving on purpose');
+  const roomId = await newRoom();
+  const host = join(roomId, 'h', 's-h');
+  await host.ready;
+  const guest = join(roomId, 'g', 's-g');
+  await guest.ready;
+  const other = join(roomId, 'o', 's-o');
+  await other.ready;
+  await sleep(60);
+  host.events.length = 0;
+
+  const left = await request('POST', `/api/rooms/${roomId}/leave`, { clientId: 'g', secret: 's-g' });
+  check('a guest can leave', left.status === 200, left.status);
+  await sleep(60);
+  const peerLeft = host.events.find((e) => e.event === 'peer-left');
+  check('the host hears at once, not after the grace period', peerLeft && peerLeft.data.clientId === 'g', host.events.map((e) => e.event));
+  const forged = await request('POST', `/api/rooms/${roomId}/leave`, { clientId: 'o', secret: 'wrong' });
+  check('nobody can leave on someone else\'s behalf', forged.status !== 200, forged.status);
+
+  await request('POST', `/api/rooms/${roomId}/leave`, { clientId: 'h', secret: 's-h' });
+  await sleep(60);
+  check('the host leaving closes the room for everyone', other.saw('room-closed'), other.events.map((e) => e.event));
+  const gone = await request('GET', `/api/rooms/${roomId}`);
+  check('and the room is gone', gone.status === 404, gone.status);
 }
 
 async function testNames() {
@@ -666,6 +730,8 @@ async function testCapsAndIce() {
     await testRoster();
     await testHostControls();
     await testCloseOnHostLeave();
+    await testLeaveButton();
+    await testTrack();
     await testNames();
     await testReactions();
     await testCapsAndIce();

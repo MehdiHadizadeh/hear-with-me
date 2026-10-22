@@ -144,6 +144,38 @@ for (const text of [
 }
 
 // ---------------------------------------------------------------------------
+console.log('\na real decoder');
+
+// Every check above can agree with the encoder and still be wrong in the same
+// way — the format copies were once drawn with rows and columns swapped, and
+// read back "fine" here while no phone could scan them. A real decoder is the
+// only referee. jsQR is not a dependency; CI installs it for this step.
+const jsQR = await import('jsqr').then((m) => m.default).catch(() => null);
+if (!jsQR) {
+  console.log('  skip jsqr not installed (npm install --no-save jsqr)');
+} else {
+  for (const text of ['https://hearwithme.ir/r/7K3QFD', 'https://hear-with-me.example.workers.dev/r/aB3dE6gH9jK', 'A'.repeat(106)]) {
+    const { modules, size, version } = QR.matrix(text);
+    const scale = 6;
+    const quiet = 4;
+    const dim = (size + quiet * 2) * scale;
+    const pixels = new Uint8ClampedArray(dim * dim * 4).fill(255);
+    for (let y = 0; y < dim; y++) {
+      for (let x = 0; x < dim; x++) {
+        const my = Math.floor(y / scale) - quiet;
+        const mx = Math.floor(x / scale) - quiet;
+        if (my < 0 || mx < 0 || my >= size || mx >= size || !modules[my][mx]) continue;
+        const i = (y * dim + x) * 4;
+        pixels[i] = pixels[i + 1] = pixels[i + 2] = 0;
+      }
+    }
+    const read = jsQR(pixels, dim, dim, { inversionAttempts: 'dontInvert' });
+    const label = text.length > 28 ? `${text.slice(0, 25)}...` : text;
+    check(`"${label}" (v${version}) scans`, read && read.data === text, read ? read.data : 'nothing decoded');
+  }
+}
+
+// ---------------------------------------------------------------------------
 console.log('\nlimits');
 
 check('106 bytes still encodes', (() => { try { QR.matrix('A'.repeat(106)); return true; } catch (e) { return false; } })());

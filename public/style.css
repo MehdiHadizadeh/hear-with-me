@@ -113,7 +113,10 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   width: 100%;
   max-width: 560px;
   margin-inline: auto;
-  padding: 20px 18px 40px;
+  /* viewport-fit=cover hands us the whole screen, status bar and notch
+     included — in the phone apps and in an installed web app alike — so the
+     top padding has to clear them itself. */
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
   min-height: 100svh;
@@ -299,7 +302,8 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   margin-bottom: 8px;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="url"] {
   width: 100%;
   font: inherit;
   /* 16px, not the body's 15: below 16 iOS zooms the whole page in the moment
@@ -314,11 +318,13 @@ input[type="text"] {
   color: var(--text);
   transition: border-color .18s var(--ease), background-color .18s var(--ease);
 }
-input[type="text"]:focus { border-color: var(--signal); background: var(--ink-3); }
+input[type="text"]:focus,
+input[type="url"]:focus { border-color: var(--signal); background: var(--ink-3); }
 /* A field already lights its own border when it takes focus; the offset ring
    on top of it read as two concentric aqua outlines. Sat against the border,
    the two become one thicker edge. */
 input[type="text"]:focus-visible,
+input[type="url"]:focus-visible,
 .select:focus-visible { outline-offset: 0; }
 /* Placeholders are read, so they meet the same 4.5:1 floor as body text. */
 input::placeholder { color: var(--faint); opacity: 1; }
@@ -406,6 +412,50 @@ input[type="text"].code-input {
   letter-spacing: .16em;
   line-height: 1;
 }
+/* The code plate and the way out, kept together at the header's far end. */
+.head-end { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.leave-btn {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  flex: none;
+  transition: color .18s var(--ease), border-color .18s var(--ease);
+}
+.leave-btn svg { width: 18px; height: 18px; }
+.leave-btn:hover { color: var(--text); border-color: var(--line-strong); }
+.leave-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.leave-dialog {
+  width: min(400px, calc(100vw - 32px));
+  padding: 24px 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .9);
+}
+.leave-dialog::backdrop { background: rgba(7, 9, 16, .72); backdrop-filter: blur(4px); }
+.leave-dialog[open] { animation: rise .22s var(--ease); }
+.leave-dialog-title { margin: 0 0 6px; font-size: 19px; font-weight: 800; }
+.leave-dialog-sub { margin: 0 0 20px; color: var(--muted); font-size: 14.5px; }
+.leave-dialog-actions { display: grid; gap: 10px; }
+.btn-danger {
+  background: var(--st-alert);
+  color: #1A0508;
+  box-shadow: 0 10px 26px -14px rgba(255, 124, 136, .7);
+}
+.btn-primary.btn-danger:hover:not(:disabled) { background: #FF95A0; }
+
 .icon-btn {
   font: inherit;
   cursor: pointer;
@@ -445,9 +495,11 @@ input[type="text"].code-input {
 .qr-code {
   width: min(232px, 62vw);
   margin: 0 auto 12px;
-  background: var(--text);
+  /* The code's own light colour, in both themes: the quiet zone is part of
+     the symbol, and a dark frame around it reads to a scanner as more code. */
+  background: #E9ECF5;
   border-radius: 10px;
-  padding: 8px;
+  overflow: hidden;
 }
 .qr-code svg { display: block; width: 100%; height: auto; }
 
@@ -1029,7 +1081,7 @@ kbd {
 /* ------------------------------------------------------------ responsive */
 
 @media (min-width: 620px) {
-  .shell { padding: 28px 24px 48px; }
+  .shell { padding: calc(28px + env(safe-area-inset-top, 0px)) 24px calc(48px + env(safe-area-inset-bottom, 0px)); }
   .hero { padding-top: 48px; }
   .meter { height: 84px; gap: 4px; }
   .stage { padding: 30px 26px 24px; }
@@ -1053,6 +1105,13 @@ kbd {
    page keeps its wordmark: there the header is the only place the name appears. */
 @media (max-width: 420px) {
   .room-head .brand-name { font-size: 15.5px; }
+  /* The host's header also carries the copy button: with the way out added,
+     the wordmark is what gives. A guest's header keeps it — there it is the
+     only place they learn what they opened. */
+  .room-shell.is-host .room-head .brand-name { display: none; }
+  /* The door alone: its label stays for screen readers. */
+  .leave-btn { padding: 0; width: 44px; justify-content: center; }
+  .leave-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .room-head .brand svg { width: 28px; height: 28px; }
   .code-plate .label { display: none; }
 }
@@ -1567,3 +1626,64 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
   .btn-wide { width: auto; min-width: 260px; display: inline-flex; margin-inline-start: 10px; }
   .hero-copy .btn-wide[hidden] { display: none; }
 }
+
+/* ------------------------------------------------------- listening by link */
+
+/* The way a phone shares Spotify or SoundCloud: a link, played by everyone in
+   that service's own player. Set off from the buttons above it by a hairline,
+   because it is a different kind of sharing, not a third button. */
+.link-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  text-align: start;
+}
+.link-form .tool-label { margin-bottom: 0; }
+.link-form .tool-hint { margin: 0; }
+.link-form .row > .btn { width: auto; min-height: 52px; padding-inline: 18px; }
+#linkInput { text-align: left; }
+#linkInput::placeholder { direction: ltr; }
+
+.link-box { display: grid; gap: 12px; margin-top: 16px; }
+.link-box--guest { margin-top: 0; margin-bottom: 16px; }
+.link-head { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.link-badge {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+  direction: ltr;
+}
+.link-sync { color: var(--muted); font-size: 13.5px; flex: 1; min-width: 0; }
+.link-end {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+.link-end:hover { color: var(--text); border-color: var(--line-strong); }
+/* The services draw their own player; ours is only the frame around it. */
+.link-player { border-radius: 12px; overflow: hidden; background: var(--ink-2); }
+.link-player:empty { display: none; }
+.link-player iframe { display: block; width: 100%; height: 152px; border: 0; }
+.link-box .tool-hint { margin: 0; }
+
+/* Only the link is on: the stream's stage, gate and volume have nothing to
+   say, and the player takes their place above the reactions. */
+.guest-layout.is-link-only #guestStage,
+.guest-layout.is-link-only #listenGate,
+.guest-layout.is-link-only .volume-row,
+.guest-layout.is-link-only #volumeHint,
+.guest-layout.is-link-only #backgroundHint,
+.host-layout.has-link #hostRehearsal { display: none !important; }

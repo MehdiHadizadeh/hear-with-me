@@ -10,7 +10,8 @@
 //   file       — a file on this device, played through Web Audio. The one way
 //                a phone can host: no phone browser hands out another app's
 //                sound.
-// Either can have the host's own microphone mixed in.
+// The host's own microphone mixes into either — or goes out alone, so the host
+// can say hello before anything is picked.
 
 import { setStage, show } from './dom.js';
 import { canCaptureNativeAudio, canCaptureSystemAudio, canShareFile, nativeAudio } from './platform.js';
@@ -45,9 +46,10 @@ export function createHostSession({
   ui, api, quality, meter, timer, rtcConfig, stats, prefs, notices, report, onQualityChange = () => {},
 }) {
   const peers = new Map(); // guestClientId -> RTCPeerConnection
-  let base = null;      // { stream, kind, stop(), element? } — what is being shared
-  let outgoing = null;  // the stream guests get: base, or base mixed with the mic
-  let mic = null;       // { stream, ctx } while the microphone is mixed in
+  let base = null;      // { stream, kind, stop(), element? } — the sound picked to share
+  let voice = null;     // { stream } — the host's microphone, while it is on
+  let mixer = null;     // { ctx } while base and voice are mixed into one
+  let outgoing = null;  // the stream guests get: base, voice, or the two mixed
   let signalTimer = null;
   let heardSound = false;
 
@@ -214,29 +216,66 @@ export function createHostSession({
     meter.attach(stream);
   }
 
-  async function mixMicrophone(on) {
+  // Whatever is on — the picked sound, the voice, or both — as one stream.
+  async function refreshOutgoing() {
+    const previousMixer = mixer;
+    mixer = null;
+    let stream = null;
+    if (base && voice) {
+      const ctx = new AudioCtx();
+      const dest = ctx.createMediaStreamDestination();
+      ctx.createMediaStreamSource(base.stream).connect(dest);
+      ctx.createMediaStreamSource(voice.stream).connect(dest);
+      await ctx.resume().catch(() => {});
+      mixer = { ctx };
+      stream = dest.stream;
+    } else if (base) {
+      stream = base.stream;
+    } else if (voice) {
+      stream = voice.stream;
+    }
+    if (stream) await setOutgoing(stream);
+    if (previousMixer) previousMixer.ctx.close();
+  }
+
+  function dropVoice() {
+    if (voice) voice.stream.getTracks().forEach((t) => t.stop());
+    voice = null;
+    ui.micToggle.checked = false;
+  }
+
+  async function setVoice(on) {
     if (!on) {
-      if (mic) { mic.stream.getTracks().forEach((t) => t.stop()); mic.ctx.close(); mic = null; }
-      if (base) await setOutgoing(base.stream);
+      if (!voice) return;
+      dropVoice();
+      // Talking was all there was: switching it off is stopping.
+      if (base) await refreshOutgoing();
+      else stopSharing();
+      updateMicLabel();
       return;
     }
-    if (!base || mic) return;
-    let micStream;
+    if (voice) return;
     try {
       // Speech settings are right here: this is a voice, not the music.
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      voice = { stream: await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }) };
     } catch (e) {
       ui.micToggle.checked = false;
-      notices.showError('دسترسی به میکروفون داده نشد.');
+      notices.showError('دسترسی به میکروفون داده نشد. اجازه‌ی میکروفون رو تو تنظیمات مرورگر بده.');
       return;
     }
-    const ctx = new AudioCtx();
-    const dest = ctx.createMediaStreamDestination();
-    ctx.createMediaStreamSource(base.stream).connect(dest);
-    ctx.createMediaStreamSource(micStream).connect(dest);
-    await ctx.resume().catch(() => {});
-    mic = { stream: micStream, ctx };
-    await setOutgoing(dest.stream);
+    const alreadyOn = isSharing();
+    await refreshOutgoing();
+    // Nothing picked yet: the voice goes out on its own.
+    if (!alreadyOn) await goOnAir('mic');
+    updateMicLabel();
+  }
+
+  function updateMicLabel() {
+    ui.micText.textContent = base
+      ? 'صدای خودم هم پخش بشه (با هدفون، وگرنه مهمان‌ها اکو می‌شنون)'
+      : voice
+        ? 'میکروفون روشنه و مهمان‌ها صدات رو می‌شنون. هر وقت خواستی آهنگ رو هم انتخاب کن.'
+        : 'میکروفونم روشن بشه: قبل از انتخاب آهنگ هم می‌شه حرف زد';
   }
 
   // -- the signal check ------------------------------------------------------
@@ -262,10 +301,12 @@ export function createHostSession({
         report('share-silent');
         setStage(ui.hostStage, 'error');
         ui.hostTitle.textContent = 'صدایی نمیاد';
-        ui.hostStatus.textContent = base && base.kind === 'file'
+        ui.hostStatus.textContent = !base && voice
+          ? 'میکروفون صدایی نمی‌گیره. یه چیزی بگو؛ اگه باز هم نیومد، اجازه‌ی میکروفون رو چک کن.'
+          : base && base.kind === 'file'
           ? 'فایل پخش نمی‌شه یا خیلی آرومه.'
           : base && base.kind === 'app'
-          ? 'یا الان چیزی پخش نمی‌شه، یا اون اپ اجازه نمی‌ده صداش ضبط بشه (بعضی اپ‌های فیلم و موسیقی این‌طورین). یه آهنگ از یه اپ دیگه پخش کن.'
+          ? 'یا الان چیزی پخش نمی‌شه، یا اون اپ اجازه نمی‌ده صداش گرفته بشه. Spotify و SoundCloud این‌طورین: برای اونا لینک آهنگ رو پایین همین صفحه بچسبون.'
           : 'یا کلید صدا تو پنجره‌ی انتخاب روشن نبود، یا تو اون تب الان چیزی پخش نمی‌شه. یه آهنگ پخش کن؛ اگه باز هم نیومد، «تعویض منبع صدا» رو بزن.';
         // Keep listening: the moment something plays, this turns live.
       }
@@ -275,47 +316,67 @@ export function createHostSession({
   function goLive() {
     prefs.setSharedBefore();
     setStage(ui.hostStage, 'live');
-    ui.hostTitle.textContent = 'زنده — داری پخش می‌کنی';
-    ui.hostStatus.textContent = 'هرکی لینک رو باز کنه، همین الان می‌شنوه.';
+    ui.hostTitle.textContent = base ? 'زنده — داری پخش می‌کنی' : 'زنده — صدات می‌ره';
+    ui.hostStatus.textContent = base
+      ? 'هرکی لینک رو باز کنه، همین الان می‌شنوه.'
+      : 'مهمان‌ها صدات رو می‌شنون. آهنگ رو که انتخاب کنی، با صدات قاطی می‌شه.';
   }
 
   // -- starting and stopping ---------------------------------------------------
 
   function showSharingControls(sharing) {
-    show(ui.startShareBtn, !sharing && canCaptureSystemAudio);
-    show(ui.fileShareLabel, !sharing && canShareFile, 'flex');
+    // Until a sound is picked — talking or not — picking one is the point.
+    const picking = !base && !nativeShare;
+    show(ui.startShareBtn, picking && canCaptureSystemAudio);
+    show(ui.fileShareLabel, picking && canShareFile, 'flex');
     // Natively there is nothing to switch to and no stream to mix into: the
     // phone shares whatever plays, whichever app plays it.
-    show(ui.switchSourceBtn, sharing && !nativeShare);
+    show(ui.switchSourceBtn, !!base && !nativeShare);
     show(ui.stopShareBtn, sharing);
     show(ui.hostLiveBox, sharing);
-    show(ui.micRow, sharing && !nativeShare && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'flex');
-    show(ui.hostRehearsal, !sharing && canCaptureSystemAudio && !canCaptureNativeAudio);
-    show(ui.fileControls, sharing && !!base && base.kind === 'file', 'flex');
+    show(ui.micRow, !nativeShare && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'flex');
+    show(ui.hostRehearsal, picking && canCaptureSystemAudio && !canCaptureNativeAudio);
+    show(ui.fileControls, !!base && base.kind === 'file', 'flex');
+    updateMicLabel();
+  }
+
+  // Telling the room something is on, the first time anything is.
+  async function goOnAir(kind) {
+    showSharingControls(true);
+    timer.start(0);
+    stats.start();
+    startSignalCheck();
+    const relayFormat = await relayFormatReady;
+    await api.setSharing(true, { relayFormat, source: kind });
   }
 
   async function begin(source) {
+    // Already talking: the sound joins the voice, and nobody reconnects.
+    if (isSharing()) { await replaceBase(source); return; }
     base = source;
     // The user can also stop it from the browser's own sharing bar.
-    source.stream.getAudioTracks()[0].addEventListener('ended', () => stopSharing());
+    source.stream.getAudioTracks()[0].addEventListener('ended', () => { if (base === source) stopSharing(); });
 
-    showSharingControls(true);
-    await setOutgoing(source.stream);
-    timer.start(0);
-    stats.start();
+    await refreshOutgoing();
     ui.nowPlayingInput.value = source.name || '';
     ui.filePlayBtn.textContent = 'مکث';
     ui.fileName.textContent = source.name || '';
-    startSignalCheck();
-
-    const relayFormat = await relayFormatReady;
-    await api.setSharing(true, { relayFormat, source: source.kind });
+    await goOnAir(source.kind);
     // A file names itself; a tab does not.
     if (source.name) api.setNowPlaying(source.name);
   }
 
   async function startSharing() {
-    if (canCaptureNativeAudio) { await startNativeShare(); return; }
+    if (canCaptureNativeAudio) {
+      // The app's capture posts to the relay itself; the page's own voice
+      // stream cannot ride along with it.
+      if (voice) {
+        await setVoice(false);
+        notices.showInfo('میکروفون خاموش شد؛ حالا صدای گوشی پخش می‌شه.');
+      }
+      await startNativeShare();
+      return;
+    }
     ui.hostStatus.textContent = 'منتظر انتخاب تب...';
     const source = await captureScreenAudio();
     if (source) await begin(source);
@@ -335,25 +396,22 @@ export function createHostSession({
     const previous = base;
     base = source;
     source.stream.getAudioTracks()[0].addEventListener('ended', () => { if (base === source) stopSharing(); });
-    const micWasOn = !!mic;
-    if (mic) await mixMicrophone(false);
-    await setOutgoing(source.stream);
-    if (micWasOn) await mixMicrophone(true);
+    await refreshOutgoing();
     if (previous) previous.stop();
     showSharingControls(true);
     ui.fileName.textContent = source.name || '';
     ui.filePlayBtn.textContent = 'مکث';
     if (source.name) { ui.nowPlayingInput.value = source.name; api.setNowPlaying(source.name); }
     startSignalCheck();
-    notices.showInfo('منبع صدا عوض شد. مهمان‌ها قطع نشدن.');
+    notices.showInfo(previous ? 'منبع صدا عوض شد. مهمان‌ها قطع نشدن.' : 'آهنگ هم اضافه شد. مهمان‌ها قطع نشدن.');
   }
 
   // Drops the capture and every connection without touching the UI, so both
   // "stop sharing" and "you are not the host any more" can reuse it.
   function teardownMedia() {
     clearInterval(signalTimer);
-    if (mic) { mic.stream.getTracks().forEach((t) => t.stop()); mic.ctx.close(); mic = null; }
-    ui.micToggle.checked = false;
+    dropVoice();
+    if (mixer) { mixer.ctx.close(); mixer = null; }
     if (base) base.stop();
     base = null;
     nativeShare = false;
@@ -453,7 +511,7 @@ export function createHostSession({
   function pushSettings() {
     api.updateSettings({
       locked: ui.lockToggle.checked,
-      closeOnHostLeave: ui.closeOnLeaveToggle.checked,
+      closeOnHostLeave: !ui.handOverToggle.checked,
       relayAllowed: !ui.directOnlyToggle.checked,
     });
   }
@@ -464,9 +522,9 @@ export function createHostSession({
   ui.nowPlayingBtn.addEventListener('click', submitNowPlaying);
   ui.nowPlayingInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitNowPlaying(); });
   ui.lockToggle.addEventListener('change', pushSettings);
-  ui.closeOnLeaveToggle.addEventListener('change', pushSettings);
+  ui.handOverToggle.addEventListener('change', pushSettings);
   ui.directOnlyToggle.addEventListener('change', pushSettings);
-  ui.micToggle.addEventListener('change', () => mixMicrophone(ui.micToggle.checked));
+  ui.micToggle.addEventListener('change', () => setVoice(ui.micToggle.checked));
 
   ui.fileInput.addEventListener('change', async () => {
     const file = ui.fileInput.files && ui.fileInput.files[0];
@@ -474,7 +532,7 @@ export function createHostSession({
     if (!file) return;
     const source = await captureFile(file);
     if (!source) return;
-    if (isSharing()) await replaceBase(source);
+    if (base) await replaceBase(source);
     else await begin(source);
   });
 
@@ -518,12 +576,12 @@ export function createHostSession({
   if (canCaptureNativeAudio) {
     ui.startShareBtn.textContent = 'پخش صدای گوشی';
     ui.fileShareText.textContent = 'یا یه فایل صوتی از گوشی';
-    ui.hostPlatformNote.textContent = 'هرچی رو گوشیت پخش بشه (اسپاتیفای، یوتیوب، تلگرام و…) مهمان‌ها می‌شنون. اندروید یه بار اجازه می‌خواد؛ فقط صدا فرستاده می‌شه، نه تصویر. صفحه‌ی گوشی رو روشن نگه دار.';
+    ui.hostPlatformNote.textContent = 'صدای بیشتر اپ‌ها (تلگرام، مرورگر، پادکست‌ها و…) مستقیم پخش می‌شه. Spotify و SoundCloud اجازه نمی‌دن صداشون گرفته بشه؛ برای اونا لینک آهنگ رو بچسبون. اندروید یه بار اجازه می‌خواد؛ فقط صدا فرستاده می‌شه، نه تصویر.';
     show(ui.hostPlatformNote, true);
   } else if (!canCaptureSystemAudio) {
     ui.fileShareLabel.classList.replace('btn-secondary', 'btn-primary');
     ui.fileShareText.textContent = 'یه فایل صوتی از گوشیت پخش کن';
-    ui.hostPlatformNote.textContent = 'مرورگرهای گوشی اجازه نمی‌دن صدای اپ‌های دیگه (مثل اسپاتیفای) فرستاده بشه. یه فایل از گوشیت پخش کن، یا همین لینک رو روی کامپیوترت باز کن و از اونجا هرچی گوش می‌دی رو پخش کن.';
+    ui.hostPlatformNote.textContent = 'مرورگرهای گوشی صدای اپ‌های دیگه رو نمی‌دن. برای Spotify، SoundCloud یا YouTube لینک آهنگ رو بچسبون تا همه با هم بشنوید؛ یا یه فایل از گوشیت پخش کن.';
     show(ui.hostPlatformNote, true);
   }
   showSharingControls(false);
@@ -544,7 +602,7 @@ export function createHostSession({
     applySettings(settings) {
       if (!settings) return;
       ui.lockToggle.checked = !!settings.locked;
-      ui.closeOnLeaveToggle.checked = !!settings.closeOnHostLeave;
+      if (typeof settings.closeOnHostLeave === 'boolean') ui.handOverToggle.checked = !settings.closeOnHostLeave;
       if (typeof settings.relayAllowed === 'boolean') ui.directOnlyToggle.checked = !settings.relayAllowed;
     },
 
