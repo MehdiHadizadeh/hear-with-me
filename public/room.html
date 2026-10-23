@@ -89,7 +89,7 @@
         <p class="leave-dialog-sub" id="leaveDialogSub">پخش برای همه قطع می‌شه و اتاق بسته می‌شه.</p>
         <div class="leave-dialog-actions">
           <button class="btn btn-primary btn-danger" value="leave" id="leaveConfirmBtn">بستن اتاق و خروج</button>
-          <button class="btn btn-ghost" value="stay">می‌مونم</button>
+          <button class="btn btn-ghost" value="stay" id="leaveStayBtn">می‌مونم</button>
         </div>
       </form>
     </dialog>
@@ -161,27 +161,8 @@
               <span class="file-name" id="fileName"></span>
             </div>
 
-            <div class="now-playing now-playing--field">
-              <label class="np-label" for="nowPlayingInput">اسم آهنگ <span class="np-optional">· اختیاری، بالای صفحه‌ی مهمان‌ها میاد</span></label>
-              <div class="row">
-                <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead · Weird Fishes" />
-                <button class="btn btn-secondary" id="nowPlayingBtn">ثبت</button>
-              </div>
-            </div>
           </div>
         </div>
-
-        <!-- Listening by link: the host plays it here, in the service's own
-             player, and every play, pause and seek goes to the guests. -->
-        <section class="link-box" id="hostLinkBox" style="display:none;" aria-label="پخش با لینک">
-          <div class="link-head">
-            <span class="link-badge" id="hostLinkProvider"></span>
-            <span class="link-sync" id="hostLinkStatus"></span>
-            <button class="link-end" id="linkStopBtn" type="button">پایان</button>
-          </div>
-          <div class="link-player" id="hostLinkPlayer"></div>
-          <p class="tool-hint" id="hostLinkNote"></p>
-        </section>
 
         <!-- Rehearsed before the browser's own picker covers the page: the one
              switch that decides whether anyone hears anything. Open the first
@@ -210,17 +191,6 @@
             <input type="file" id="fileInput" accept="audio/*" class="sr-only" />
             <span id="fileShareText">پخش یه فایل صوتی از این دستگاه</span>
           </label>
-          <!-- Spotify and SoundCloud on a phone: their sound cannot be captured
-               there, but every guest can play the same track in that
-               service's own player, kept in step (public/shared/links.js). -->
-          <form class="link-form" id="linkForm" novalidate>
-            <label class="tool-label" for="linkInput">یا لینک یه آهنگ از <span class="ltr">Spotify</span>، <span class="ltr">SoundCloud</span> یا <span class="ltr">YouTube</span></label>
-            <div class="row">
-              <input type="url" id="linkInput" inputmode="url" dir="ltr" autocomplete="off" placeholder="https://soundcloud.com/..." />
-              <button class="btn btn-secondary" id="linkBtn" type="submit">پخش با هم</button>
-            </div>
-            <p class="tool-hint" id="linkHint">از گوشی هم کار می‌کنه: هر مهمان همون آهنگ رو تو پخش‌کننده‌ی خود اون سرویس می‌شنوه، هم‌زمان با تو.</p>
-          </form>
           <!-- Swapping the captured tab re-points the existing connections
                instead of tearing them down, so nobody drops out. -->
           <button class="btn btn-secondary" id="switchSourceBtn" style="display:none;">تعویض منبع صدا</button>
@@ -239,6 +209,17 @@
             <label class="tool-label" for="hostNameInput">اسمت</label>
             <input type="text" id="hostNameInput" maxlength="24" placeholder="مثلاً مهدی" autocomplete="nickname" />
             <p class="tool-hint">تو پیش‌نمایش لینک می‌آد: «مهدی داره زنده پخش می‌کنه».</p>
+          </div>
+
+          <!-- Beside the name, not under the meter: it is a label for the
+               guests, typed once, not something to watch while sharing. -->
+          <div class="field np-field" id="nowPlayingField" style="display:none;">
+            <label class="tool-label" for="nowPlayingInput">اسم آهنگ <span class="np-optional">· اختیاری</span></label>
+            <div class="row">
+              <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead · Weird Fishes" />
+              <button class="btn btn-secondary" id="nowPlayingBtn">ثبت</button>
+            </div>
+            <p class="tool-hint">بالای صفحه‌ی مهمان‌ها نشون داده می‌شه.</p>
           </div>
 
           <div class="share-row">
@@ -329,17 +310,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Listening by link: the same track, in its own service's player. -->
-        <section class="link-box link-box--guest" id="linkCard" style="display:none;" aria-label="پخش با لینک">
-          <div class="link-head">
-            <span class="link-badge" id="guestLinkProvider"></span>
-            <span class="link-sync" id="linkStatus" role="status"></span>
-          </div>
-          <div class="link-player" id="guestLinkPlayer"></div>
-          <button class="btn btn-primary" id="linkJoinBtn" type="button">پخش، هم‌زمان با میزبان</button>
-          <p class="tool-hint" id="guestLinkNote"></p>
-        </section>
 
         <!-- The first tap. It unlocks audio (the autoplay gesture) and is where
              the guest chooses how to listen, with the cost of each said out

@@ -12,6 +12,7 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Room } from './lib/room.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -519,44 +520,26 @@ async function testCloseOnHostLeave() {
   check('the room itself is gone', gone.status === 404, gone.status);
 }
 
-// Listening by link: the host sets a track, its state reaches every guest,
-// and a late joiner gets it in their welcome.
-async function testTrack() {
-  console.log('\nlistening by link');
-  const roomId = await newRoom();
-  const host = join(roomId, 'h', 's-h');
-  await host.ready;
-  const guest = join(roomId, 'g', 's-g');
-  await guest.ready;
-  await sleep(60);
-
-  const bad = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', url: 'https://example.com/song' });
-  check('a link we cannot play is refused', bad.status === 400, bad.status);
-  const notHost = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'g', secret: 's-g', url: 'https://soundcloud.com/a/b' });
-  check('only the host sets the track', notHost.status === 403, notHost.status);
-
-  const set = await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', url: 'https://m.soundcloud.com/a/b?si=x' });
-  check('the host sets a track, canonical and paused', set.status === 200 && set.json.track.url === 'https://soundcloud.com/a/b' && set.json.track.playing === false && set.json.track.via === 'embed', set.json);
-  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', playing: true, positionMs: 42000 });
-  await sleep(60);
-  const last = guest.events.filter((e) => e.event === 'track').pop();
-  check('guests hear play and position', last && last.data.track.playing === true && last.data.track.positionMs === 42000 && typeof last.data.serverNow === 'number', last && last.data);
-
-  const late = join(roomId, 'l', 's-l');
-  await late.ready;
-  const welcome = late.events.find((e) => e.event === 'welcome');
-  check('a late joiner gets the track in the welcome', welcome && welcome.data.track && welcome.data.track.playing === true, welcome && welcome.data.track);
-
-  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', playing: true, positionMs: 1000, index: 2, via: 'relay' });
-  await sleep(60);
-  const moved = guest.events.filter((e) => e.event === 'track').pop();
-  check('playlist item and path reach guests', moved && moved.data.track.index === 2 && moved.data.track.via === 'relay', moved && moved.data.track);
-
-  await request('POST', `/api/rooms/${roomId}/track`, { clientId: 'h', secret: 's-h', clear: true });
-  await sleep(60);
-  const cleared = guest.events.filter((e) => e.event === 'track').pop();
-  check('clearing reaches guests', cleared && cleared.data.track === null, cleared && cleared.data);
-  host.drop(); guest.drop(); late.drop();
+// A host whose phone switched apps is not gone: their room must still be
+// there for the guest who opens the link they just sent.
+async function testHostKeepsRoom() {
+  console.log('\nthe host stepping away');
+  let closed = false;
+  const room = new Room('HOSTAWAY', { graceMs: 50, hostGraceMs: 400, onClosed: () => { closed = true; } });
+  const connection = () => ({ send() {}, end() {} });
+  const hostConn = connection();
+  room.join('h', 's-h', hostConn);
+  room.join('g', 's-g', connection());
+  room.markDisconnected('h', hostConn);
+  await sleep(200);
+  check('past a guest\'s grace, the room is still open', !closed && room.isHost('h'));
+  const back = connection();
+  room.join('h', 's-h', back);
+  await sleep(300);
+  check('a host who comes back keeps it', !closed && room.isHost('h'));
+  room.markDisconnected('h', back);
+  await sleep(500);
+  check('a host gone for good still ends it', closed);
 }
 
 // The leave button: no grace period, for a guest or for the host.
@@ -704,7 +687,7 @@ async function testCapsAndIce() {
     stdio: ['ignore', 'ignore', 'inherit'],
     // The per-IP cap on room creation is exercised by testCapsAndIce against
     // its own server; here it would just starve the suite halfway through.
-    env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: String(GRACE), ROOMS_PER_IP: '1000' },
+    env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: String(GRACE), HOST_DISCONNECT_GRACE_MS: String(GRACE), ROOMS_PER_IP: '1000' },
   });
 
   // A server that failed to start must never be mistaken for a server that
@@ -736,7 +719,7 @@ async function testCapsAndIce() {
     await testHostControls();
     await testCloseOnHostLeave();
     await testLeaveButton();
-    await testTrack();
+    await testHostKeepsRoom();
     await testNames();
     await testReactions();
     await testCapsAndIce();

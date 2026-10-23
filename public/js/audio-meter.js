@@ -9,6 +9,8 @@ const FFT_SIZE = 2048;
 const FLOOR = 0.04;      // bars never collapse to nothing, or the row disappears
 const SMOOTHING = 0.6;   // enough to stop flicker, not enough to lag the beat
 const HIGH_BIN_RATIO = 0.6; // ~14kHz at 48kHz; above that is near-silent
+const FED_RANGE_DB = 42;    // a fed level this far below full scale shows as nothing
+const FED_RELEASE = 0.7;    // how much of the last height a falling level keeps
 
 let audioCtx = null;
 
@@ -58,6 +60,11 @@ export function createLevelMeter(container, barCount = 32) {
   let data = null;
   let frame = null;
   let fedLevel = null; // a level from outside (the Android app's capture), 0..1
+  let fedShown = 0;    // what the bars show of it, after the slow fall
+  // Taller in the middle, like most music's spectrum; each bar breathes a
+  // little on its own between reports.
+  const fedProfile = bars.map((_, i) => 0.5 + 0.5 * Math.sin(Math.PI * ((i + 0.5) / barCount)));
+  const fedWobble = bars.map(() => 1);
 
   function draw() {
     frame = requestAnimationFrame(draw);
@@ -100,15 +107,25 @@ export function createLevelMeter(container, barCount = 32) {
     // The loudest sample right now, 0..1. Read directly rather than from the
     // drawing loop, because animation frames stop on a hidden tab and the
     // host's tab is usually hidden behind the music.
-    // The app's native capture reports one real level, not a spectrum. The
-    // bars then all follow that level — honest about loudness, and making no
-    // claim about frequencies nobody measured.
+    // The app's native capture reports one real level — a sample peak a few
+    // times a second — not a spectrum. Drawn straight, music peaks near full
+    // scale and every bar sat at the top: a solid block, not a meter. So the
+    // height is the level in decibels, falling back slowly like a real meter,
+    // and the bars spread around it in a gently moving shape. The height is
+    // measured; the shape is only there so it reads as a meter.
     feed(level) {
       if (analyser) return;
       fedLevel = Math.max(0, Math.min(1, level));
       container.classList.toggle('idle', fedLevel === 0);
-      const shown = Math.max(FLOOR, Math.min(1, fedLevel * 1.8));
-      for (const bar of bars) bar.style.transform = `scaleY(${shown})`;
+      container.classList.add('fed');
+      const db = fedLevel > 0 ? 20 * Math.log10(fedLevel) : -Infinity;
+      const target = Math.max(0, Math.min(1, (db + FED_RANGE_DB) / FED_RANGE_DB));
+      fedShown = target >= fedShown ? target : fedShown * FED_RELEASE + target * (1 - FED_RELEASE);
+      for (let i = 0; i < bars.length; i++) {
+        fedWobble[i] = fedWobble[i] * 0.5 + (0.45 + Math.random() * 0.55) * 0.5;
+        const height = fedShown * fedProfile[i] * fedWobble[i];
+        bars[i].style.transform = `scaleY(${Math.max(FLOOR, height)})`;
+      }
     },
 
     // `instant` reads the short window, for something drawn every frame.
@@ -129,6 +146,8 @@ export function createLevelMeter(container, barCount = 32) {
       levelAnalyser = null;
       data = null;
       fedLevel = null;
+      fedShown = 0;
+      container.classList.remove('fed');
       container.classList.add('idle');
       for (const bar of bars) bar.style.transform = `scaleY(${FLOOR})`;
     },

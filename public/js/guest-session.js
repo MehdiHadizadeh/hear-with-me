@@ -74,7 +74,6 @@ export function createGuestSession({
   let wantListening = false;  // sharing is on and we should be hearing it
   let listeningSince = null;
   let hostName = '';
-  let linkLive = false;       // a link is playing for everyone (js/link-listen.js)
 
   const relayUsable = () => relayAllowed && canPlayRelay(relayFormat);
   const pathNow = () => ((mode === 'relay' || !directAvailable) && relayUsable() ? 'relay' : 'direct');
@@ -580,22 +579,6 @@ export function createGuestSession({
       // Switched off under us: back to the direct path.
       if (was && !relayAllowed && relay.active) { relay.stop(); connect(); }
     },
-    // A link is playing for everyone: the guest has something to react to
-    // even with no stream to connect.
-    setLinkLive(on) {
-      linkLive = on;
-      if (wantListening) return; // the stream's own state says it all
-      renderWho(on ? 'live' : 'waiting');
-      setReactionsEnabled(on);
-      if (on) {
-        ui.guestStatusTitle.textContent = 'با هم گوش می‌دید';
-        ui.guestStatusSub.textContent = '';
-      } else if (ui.guestStage.dataset.state === 'waiting') {
-        ui.guestStatusTitle.textContent = 'در انتظار میزبان';
-        ui.guestStatusSub.textContent = 'وقتی پخش شروع بشه، همین‌جا می‌شنوی.';
-      }
-    },
-
     setHostName(name) {
       hostName = name || '';
       renderWho();
@@ -618,7 +601,6 @@ export function createGuestSession({
       ui.guestStatusTitle.textContent = 'در انتظار میزبان';
       ui.guestStatusSub.textContent = 'وقتی پخش شروع بشه، همین‌جا می‌شنوی.';
       if (!armed) showGate();
-      if (linkLive) this.setLinkLive(true);
     },
 
     // Sharing is on: listen, by whichever path this guest uses. A fresh

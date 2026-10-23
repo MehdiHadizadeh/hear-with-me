@@ -111,7 +111,7 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     BASE = `http://localhost:${PORT}`;
     server = spawn(process.execPath, ['server.js'], {
       cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'],
-      env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800', STATS_TOKEN: 't' },
+      env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800', HOST_DISCONNECT_GRACE_MS: '800', STATS_TOKEN: 't' },
     });
   }
   const browser = await chromium.launch({

@@ -306,7 +306,7 @@ export function createHostSession({
           : base && base.kind === 'file'
           ? 'فایل پخش نمی‌شه یا خیلی آرومه.'
           : base && base.kind === 'app'
-          ? 'یا الان چیزی پخش نمی‌شه، یا اون اپ اجازه نمی‌ده صداش گرفته بشه. Spotify و SoundCloud این‌طورین: برای اونا لینک آهنگ رو پایین همین صفحه بچسبون.'
+          ? 'یا الان چیزی پخش نمی‌شه، یا اون اپ اجازه نمی‌ده صداش گرفته بشه. Spotify و SoundCloud روی گوشی این‌طورین؛ آهنگ‌هاشون رو از کامپیوتر پخش کن.'
           : 'یا کلید صدا تو پنجره‌ی انتخاب روشن نبود، یا تو اون تب الان چیزی پخش نمی‌شه. یه آهنگ پخش کن؛ اگه باز هم نیومد، «تعویض منبع صدا» رو بزن.';
         // Keep listening: the moment something plays, this turns live.
       }
@@ -334,6 +334,7 @@ export function createHostSession({
     show(ui.switchSourceBtn, !!base && !nativeShare);
     show(ui.stopShareBtn, sharing);
     show(ui.hostLiveBox, sharing);
+    show(ui.nowPlayingField, sharing, 'grid');
     show(ui.micRow, !nativeShare && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'flex');
     show(ui.hostRehearsal, picking && canCaptureSystemAudio && !canCaptureNativeAudio);
     show(ui.fileControls, !!base && base.kind === 'file', 'flex');
@@ -576,12 +577,12 @@ export function createHostSession({
   if (canCaptureNativeAudio) {
     ui.startShareBtn.textContent = 'پخش صدای گوشی';
     ui.fileShareText.textContent = 'یا یه فایل صوتی از گوشی';
-    ui.hostPlatformNote.textContent = 'صدای بیشتر اپ‌ها (تلگرام، مرورگر، پادکست‌ها و…) مستقیم پخش می‌شه. Spotify و SoundCloud اجازه نمی‌دن صداشون گرفته بشه؛ برای اونا لینک آهنگ رو بچسبون. اندروید یه بار اجازه می‌خواد؛ فقط صدا فرستاده می‌شه، نه تصویر.';
+    ui.hostPlatformNote.textContent = 'صدای بیشتر اپ‌ها (تلگرام، مرورگر، پادکست‌ها و…) پخش می‌شه. Spotify و SoundCloud روی گوشی اجازه نمی‌دن صداشون گرفته بشه؛ برای اونا همین اتاق رو روی کامپیوتر باز کن و از اونجا پخش کن. اندروید یه بار اجازه می‌خواد؛ فقط صدا فرستاده می‌شه، نه تصویر.';
     show(ui.hostPlatformNote, true);
   } else if (!canCaptureSystemAudio) {
     ui.fileShareLabel.classList.replace('btn-secondary', 'btn-primary');
     ui.fileShareText.textContent = 'یه فایل صوتی از گوشیت پخش کن';
-    ui.hostPlatformNote.textContent = 'مرورگرهای گوشی صدای اپ‌های دیگه رو نمی‌دن. برای Spotify، SoundCloud یا YouTube لینک آهنگ رو بچسبون تا همه با هم بشنوید؛ یا یه فایل از گوشیت پخش کن.';
+    ui.hostPlatformNote.textContent = 'مرورگرهای گوشی صدای اپ‌های دیگه (مثل Spotify و SoundCloud) رو نمی‌دن. یه فایل از گوشیت پخش کن، یا همین اتاق رو روی کامپیوتر باز کن و از اونجا هرچی گوش می‌دی رو پخش کن.';
     show(ui.hostPlatformNote, true);
   }
   showSharingControls(false);
@@ -589,9 +590,6 @@ export function createHostSession({
   return {
     peers,
     isSharing,
-    startSharing,
-    // Whether the current share has been heard to carry any sound yet.
-    get heardSound() { return heardSound; },
     handleOffer,
     handleIce,
     handleQualityRequest,

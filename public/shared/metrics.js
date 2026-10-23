@@ -13,7 +13,7 @@ export const METRIC_EVENTS = {
   // A room was created (counted by the server itself).
   'room-created': {},
   // The host started sharing, and from what.
-  'share-started': { source: ['tab', 'screen', 'file', 'app', 'mic', 'link', 'unknown'] },
+  'share-started': { source: ['tab', 'screen', 'file', 'app', 'mic', 'unknown'] },
   // The host's capture produced no sound in its first seconds.
   'share-silent': {},
   // A guest started hearing audio, by which path, and why that path.

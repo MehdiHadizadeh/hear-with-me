@@ -924,6 +924,9 @@ input[type="text"].code-input {
   background: var(--panel-2);
   transform: scaleY(0.04);
 }
+/* Fed from the phone app a few times a second rather than every frame: the
+   bars glide between reports instead of jumping. */
+.meter.fed span { transition: transform .2s ease-out; }
 
 .live-row {
   display: flex;
@@ -1344,6 +1347,8 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
 .guest-hero .now-playing { margin-top: 0; }
 .now-playing .np-label { color: var(--signal); }
 .np-optional { color: var(--faint); font-weight: 500; }
+.np-field { margin-top: 18px; }
+.np-field .row > .btn { width: auto; min-height: 52px; }
 #guestNowPlaying { display: flex; align-items: center; gap: 10px; }
 .np-note {
   flex: none;
@@ -1627,63 +1632,3 @@ html { scrollbar-color: var(--line-strong) var(--ink); }
   .hero-copy .btn-wide[hidden] { display: none; }
 }
 
-/* ------------------------------------------------------- listening by link */
-
-/* The way a phone shares Spotify or SoundCloud: a link, played by everyone in
-   that service's own player. Set off from the buttons above it by a hairline,
-   because it is a different kind of sharing, not a third button. */
-.link-form {
-  display: grid;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-  text-align: start;
-}
-.link-form .tool-label { margin-bottom: 0; }
-.link-form .tool-hint { margin: 0; }
-.link-form .row > .btn { width: auto; min-height: 52px; padding-inline: 18px; }
-#linkInput { text-align: left; }
-#linkInput::placeholder { direction: ltr; }
-
-.link-box { display: grid; gap: 12px; margin-top: 16px; }
-.link-box--guest { margin-top: 0; margin-bottom: 16px; }
-.link-head { display: flex; align-items: center; gap: 10px; min-height: 32px; }
-.link-badge {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .02em;
-  padding: 4px 10px;
-  border-radius: 999px;
-  color: var(--signal);
-  background: color-mix(in srgb, var(--signal) 12%, transparent);
-  direction: ltr;
-}
-.link-sync { color: var(--muted); font-size: 13.5px; flex: 1; min-width: 0; }
-.link-end {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-}
-.link-end:hover { color: var(--text); border-color: var(--line-strong); }
-/* The services draw their own player; ours is only the frame around it. */
-.link-player { border-radius: 12px; overflow: hidden; background: var(--ink-2); }
-.link-player:empty { display: none; }
-.link-player iframe { display: block; width: 100%; height: 152px; border: 0; }
-.link-box .tool-hint { margin: 0; }
-
-/* Only the link is on: the stream's stage, gate and volume have nothing to
-   say, and the player takes their place above the reactions. */
-.guest-layout.is-link-only #guestStage,
-.guest-layout.is-link-only #listenGate,
-.guest-layout.is-link-only .volume-row,
-.guest-layout.is-link-only #volumeHint,
-.guest-layout.is-link-only #backgroundHint,
-.host-layout.has-link #hostRehearsal { display: none !important; }

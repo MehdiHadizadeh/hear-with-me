@@ -59,7 +59,7 @@ function waitForServer(url, isGone, tries = 30) {
     stdio: 'inherit',
     // Short disconnect grace so the "a guest leaves" case doesn't cost the
     // full 10 seconds the server waits in production.
-    env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800' },
+    env: { ...process.env, PORT: String(PORT), DISCONNECT_GRACE_MS: '800', HOST_DISCONNECT_GRACE_MS: '800' },
   });
   let serverGone = null;
   server.once('exit', (code, signal) => {

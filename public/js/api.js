@@ -54,9 +54,6 @@ export function createRoomApi(roomId, identity) {
     react: (kind) => post('/reaction', { kind }),
     updateSettings: (settings) => post('/settings', settings),
     kick: (targetId) => post('/kick', { targetId }),
-    setTrack: (url, via) => post('/track', { url, via }),
-    updateTrack: (state) => post('/track', state),
-    clearTrack: () => post('/track', { clear: true }),
     // Sent as a beacon too when there is one: the page may be gone a moment
     // after the tap, and the room should still hear it.
     leave() {
