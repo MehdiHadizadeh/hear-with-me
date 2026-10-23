@@ -1,6 +1,6 @@
 {
   "name": "hear-with-me",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Hear With Me — live-share whatever audio is playing on your desktop with anyone, on any device. No accounts, no app store, no runtime dependencies.",
   "main": "server.js",
   "type": "module",

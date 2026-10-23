@@ -1,6 +1,6 @@
 {
   "name": "hear-with-me-app",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "description": "Hear With Me for Android and iPhone: the web client in a native shell, plus what only a native app can do.",
   "scripts": {
