@@ -51,6 +51,18 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: npm ci
+      # Files are named after the version people know: a release's after its
+      # tag (HearWithMe-0.6.1.apk), anything else after the version it is
+      # heading for plus its build (HearWithMe-0.6.1-dev21.apk), so a test
+      # build is never mistaken for a release. The build number still lives
+      # inside the Android app, which needs it to accept an update.
+      - name: Name the files after the version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "BUILD_NAME=HearWithMe-${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_NAME=HearWithMe-$(node -p "require('./package.json').version")-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          fi
       - name: Point the app at this build's server
         run: node tools/point-at-server.mjs
       - run: npx cap sync android
@@ -75,7 +87,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
           mkdir -p ../dist
-          cp app/build/outputs/apk/release/app-release.apk "../dist/HearWithMe-${GITHUB_RUN_NUMBER}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "../dist/${BUILD_NAME}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
@@ -98,6 +110,18 @@ jobs:
         with:
           xcode-version: latest-stable
       - run: npm ci
+      # Files are named after the version people know: a release's after its
+      # tag (HearWithMe-0.6.1.apk), anything else after the version it is
+      # heading for plus its build (HearWithMe-0.6.1-dev21.apk), so a test
+      # build is never mistaken for a release. The build number still lives
+      # inside the Android app, which needs it to accept an update.
+      - name: Name the files after the version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "BUILD_NAME=HearWithMe-${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_NAME=HearWithMe-$(node -p "require('./package.json').version")-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          fi
       - name: Point the app at this build's server
         run: node tools/point-at-server.mjs
       - run: npx cap sync ios
@@ -113,7 +137,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
           mkdir -p Payload ../../dist
           cp -R build/Build/Products/Release-iphoneos/App.app Payload/
-          zip -qry "../../dist/HearWithMe-${GITHUB_RUN_NUMBER}-unsigned.ipa" Payload
+          zip -qry "../../dist/${BUILD_NAME}-unsigned.ipa" Payload
       - name: Build for the simulator
         working-directory: app/ios/App
         run: |
@@ -121,7 +145,7 @@ jobs:
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build-sim \
             CODE_SIGNING_ALLOWED=NO build
           cd build-sim/Build/Products/Debug-iphonesimulator
-          zip -qry "$GITHUB_WORKSPACE/app/dist/HearWithMe-${GITHUB_RUN_NUMBER}-simulator.zip" App.app
+          zip -qry "$GITHUB_WORKSPACE/app/dist/${BUILD_NAME}-simulator.zip" App.app
       - uses: actions/upload-artifact@v4
         with:
           name: ios-builds

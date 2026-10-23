@@ -7,7 +7,7 @@ only an app can do:
 |---|---|---|
 | Listen with the screen locked | yes (a media notification keeps it alive) | yes (background audio mode) |
 | Host from a file on the phone | yes | yes |
-| **Host what other apps play** (Spotify, YouTube, Telegram…) | **yes**, Android 10+ | no — needs a ReplayKit extension and a paid Apple developer account |
+| **Host what other apps play** (Telegram, YouTube, podcasts…) | **yes**, Android 10+ — except apps that refuse capture, Spotify and SoundCloud among them | no — needs a ReplayKit extension and a paid Apple developer account |
 
 Hosting on Android works like a desktop host on the screen-off path: the app
 captures playback (`MediaProjection` + `AudioPlaybackCapture`), encodes AAC
@@ -24,14 +24,17 @@ Every push builds both in GitHub Actions (`.github/workflows/app.yml`):
   manager). Builds from `main` and version tags open hearwithme.ir; builds
   from other branches open the staging deployment.
 - **iPhone:** `…-unsigned.ipa` in the `ios-builds` artifact. Without an Apple
-  developer account it cannot be signed in CI; install it with Sideloadly or
-  AltStore and a free Apple ID (such installs expire after seven days).
-  `…-simulator.zip` runs in the iOS Simulator.
+  developer account it cannot be signed in CI. With a Mac, build and install
+  it from Xcode instead — step by step in [docs/iphone-on-mac.md](../docs/iphone-on-mac.md).
+  `…-simulator.zip` runs in the iOS Simulator on a Mac (same guide).
+
+Files are named after the version: `HearWithMe-0.6.1.apk` from a release tag,
+`HearWithMe-0.6.1-dev21.apk` from any other build.
 
 Tag a version to publish a release with both attached:
 
 ```bash
-git tag v0.5.0 && git push origin v0.5.0
+git tag v0.6.1 && git push origin v0.6.1
 ```
 
 ## Signing for real
