@@ -17,6 +17,7 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -76,7 +77,8 @@ public class CaptureService extends Service {
     private static final long SILENT_AFTER_MS = 6000;
     private static final long LEVEL_EVERY_MS = 100;
     private static final int MAX_QUEUED_UPLOADS = 40;     // ~10 s; past that, drop rather than lag
-    private static final long PROBE_EVERY_MS = 2000;      // while nobody listens: just enough to learn when someone does
+    private static final long PROBE_EVERY_MS = 1000;      // while nobody listens: an empty post, just to learn when someone does
+    private static final int UPLOAD_THREADS = 2;          // a slow round trip (screen off, weak signal) must not hold up the next quarter second
 
     private MediaProjection projection;
     private AudioRecord record;
@@ -85,6 +87,11 @@ public class CaptureService extends Service {
     private volatile boolean stopping = false;
     private ThreadPoolExecutor uploader;
     private PowerManager.WakeLock wakeLock;
+    private WifiManager.WifiLock wifiLock;
+
+    // The batch being filled with encoded frames, between the loop and the drain.
+    private final ByteArrayOutputStream batch = new ByteArrayOutputStream();
+    private int framesInBatch = 0;
 
     private String origin;
     private String roomId;
@@ -176,7 +183,7 @@ public class CaptureService extends Service {
         codec.configure(aac, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         codec.start();
 
-        uploader = new ThreadPoolExecutor(1, 1, 0L, java.util.concurrent.TimeUnit.MILLISECONDS,
+        uploader = new ThreadPoolExecutor(UPLOAD_THREADS, UPLOAD_THREADS, 0L, java.util.concurrent.TimeUnit.MILLISECONDS,
             new java.util.concurrent.LinkedBlockingQueue<>());
         generation = System.currentTimeMillis();
         seq = 0;
@@ -184,6 +191,18 @@ public class CaptureService extends Service {
         PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "hearwithme:capture");
         wakeLock.acquire(6 * 60 * 60 * 1000L);
+        // With the screen off the Wi-Fi radio otherwise dozes between packets,
+        // and every upload then waits for it to wake: that is the stutter a
+        // locked phone host makes. (Mobile data is unaffected by this.)
+        try {
+            WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wifi != null) {
+                wifiLock = wifi.createWifiLock(Build.VERSION.SDK_INT >= 29
+                    ? WifiManager.WIFI_MODE_FULL_LOW_LATENCY : WifiManager.WIFI_MODE_FULL_HIGH_PERF, "hearwithme:capture");
+                wifiLock.setReferenceCounted(false);
+                wifiLock.acquire();
+            }
+        } catch (Exception ignored) { /* a phone without Wi-Fi, or not allowed: carry on */ }
 
         record.startRecording();
         stopping = false;
@@ -194,8 +213,6 @@ public class CaptureService extends Service {
     private void loop() {
         byte[] pcm = new byte[4096];
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        ByteArrayOutputStream batch = new ByteArrayOutputStream();
-        int framesInBatch = 0;
         long presentationUs = 0;
         long lastLevelAt = 0;
         float windowPeak = 0;
@@ -234,7 +251,13 @@ public class CaptureService extends Service {
             int offset = 0;
             while (offset < read && !stopping) {
                 int index = codec.dequeueInputBuffer(10000);
-                if (index < 0) break;
+                if (index < 0) {
+                    // The encoder is behind (a throttled CPU, screen off). Let it
+                    // empty its output and try again: dropping this audio would
+                    // cut a piece out of the song, which guests hear as a skip.
+                    drainEncoder(info);
+                    continue;
+                }
                 ByteBuffer in = codec.getInputBuffer(index);
                 if (in == null) break;
                 in.clear();
@@ -244,27 +267,30 @@ public class CaptureService extends Service {
                 presentationUs += length * 1_000_000L / (SAMPLE_RATE * CHANNELS * 2);
                 offset += length;
             }
+            drainEncoder(info);
+        }
+    }
 
-            int out;
-            while ((out = codec.dequeueOutputBuffer(info, 0)) >= 0) {
-                if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0 && info.size > 0) {
-                    ByteBuffer encoded = codec.getOutputBuffer(out);
-                    if (encoded != null) {
-                        byte[] frame = new byte[info.size + 7];
-                        writeAdtsHeader(frame, frame.length);
-                        encoded.position(info.offset);
-                        encoded.get(frame, 7, info.size);
-                        batch.write(frame, 0, frame.length);
-                        framesInBatch++;
-                        if (framesInBatch >= FRAMES_PER_UPLOAD) {
-                            upload(batch.toByteArray());
-                            batch.reset();
-                            framesInBatch = 0;
-                        }
+    private void drainEncoder(MediaCodec.BufferInfo info) {
+        int out;
+        while ((out = codec.dequeueOutputBuffer(info, 0)) >= 0) {
+            if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0 && info.size > 0) {
+                ByteBuffer encoded = codec.getOutputBuffer(out);
+                if (encoded != null) {
+                    byte[] frame = new byte[info.size + 7];
+                    writeAdtsHeader(frame, frame.length);
+                    encoded.position(info.offset);
+                    encoded.get(frame, 7, info.size);
+                    batch.write(frame, 0, frame.length);
+                    framesInBatch++;
+                    if (framesInBatch >= FRAMES_PER_UPLOAD) {
+                        upload(batch.toByteArray());
+                        batch.reset();
+                        framesInBatch = 0;
                     }
                 }
-                codec.releaseOutputBuffer(out, false);
             }
+            codec.releaseOutputBuffer(out, false);
         }
     }
 
@@ -282,20 +308,27 @@ public class CaptureService extends Service {
         packet[6] = (byte) 0xFC;
     }
 
-    private void upload(byte[] bytes) {
+    private void upload(byte[] audio) {
+        byte[] bytes = audio;
         if (serverDemand <= 0) {
-            // Nobody is listening as far as we know. Send a batch now and then
-            // anyway: the answer is how a guest arriving later gets found.
+            // Nobody is listening as far as we know. Post an empty chunk now
+            // and then anyway: the answer is how a guest arriving later gets
+            // found. Empty, because the relay keeps the last moment of what it
+            // is given for whoever joins next, and snippets from seconds apart
+            // would play back-to-back like a fast-forward.
             long now = System.currentTimeMillis();
             if (now - lastProbeAt < PROBE_EVERY_MS) return;
             lastProbeAt = now;
+            bytes = new byte[0];
         }
-        final long gen = generation;
-        final int s = seq++;
         // Uploads overtaking each other are reordered by the server; a backlog
         // this long means the network cannot keep up, and late audio is worth
-        // less than a gap.
+        // less than a gap. Decided before a sequence number is spent, so the
+        // server never waits for one that was never sent.
         if (uploader.getQueue().size() > MAX_QUEUED_UPLOADS) return;
+        final long gen = generation;
+        final int s = seq++;
+        final byte[] payload = bytes;
         uploader.execute(() -> {
             HttpURLConnection connection = null;
             try {
@@ -305,11 +338,11 @@ public class CaptureService extends Service {
                 connection.setDoOutput(true);
                 connection.setConnectTimeout(8000);
                 connection.setReadTimeout(8000);
-                connection.setFixedLengthStreamingMode(bytes.length);
+                connection.setFixedLengthStreamingMode(payload.length);
                 connection.setRequestProperty("Content-Type", "application/octet-stream");
                 connection.setRequestProperty("X-HWM-Client", clientId);
                 connection.setRequestProperty("X-HWM-Secret", secret);
-                try (OutputStream body = connection.getOutputStream()) { body.write(bytes); }
+                try (OutputStream body = connection.getOutputStream()) { body.write(payload); }
                 int status = connection.getResponseCode();
                 InputStream answer = status < 400 ? connection.getInputStream() : connection.getErrorStream();
                 if (answer != null) {
@@ -320,9 +353,13 @@ public class CaptureService extends Service {
                     if (status < 400) serverDemand = parseListeners(text.toString("UTF-8"));
                 }
                 if (status == 403 || status == 404) emitState("error", "relay-refused-" + status);
+                connection = null; // finished cleanly: leave the connection to be reused
             } catch (Exception e) {
                 // A dropped upload is a short gap for the listeners, nothing more.
             } finally {
+                // Reusing the connection saves a TCP and TLS handshake per quarter
+                // second, which is most of what a locked phone cannot afford. Only
+                // one that failed is closed.
                 if (connection != null) connection.disconnect();
             }
         });
@@ -361,6 +398,8 @@ public class CaptureService extends Service {
         projection = null;
         if (uploader != null) uploader.shutdown();
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        try { if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); } catch (Exception ignored) { }
+        wifiLock = null;
         boolean wasRunning = running;
         running = false;
         if (wasRunning) emitState("stopped", reason);
