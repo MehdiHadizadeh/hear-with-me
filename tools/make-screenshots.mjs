@@ -68,36 +68,42 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const { roomId } = await (await fetch(`${base}/api/rooms`, { method: 'POST' })).json();
 
     // 1. The landing page, on the desktop the host is always using.
-    const landing = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+    const landing = await (await browser.newContext({ viewport: { width: 1280, height: 860 }, colorScheme: 'dark' })).newPage();
     await landing.goto(`${base}/`);
     await landing.waitForTimeout(1200); // let the wave field settle mid-drift
     await shot(landing, 'landing');
 
     // 2. The host, mid-session: live meter, a track label, a guest on the roster.
-    const hostPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    const hostPage = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'dark' })).newPage();
     await hostPage.goto(`${base}/r/${roomId}`);
     await hostPage.waitForSelector('#hostCard', { state: 'visible' });
     await hostPage.click('#startShareBtn');
     await hostPage.waitForFunction(() => document.getElementById('stopShareBtn').style.display !== 'none');
-    await hostPage.fill('#nowPlayingInput', 'Radiohead — Weird Fishes');
+    await hostPage.fill('#nowPlayingInput', 'Weird Fishes · Radiohead');
     await hostPage.click('#nowPlayingBtn');
 
     // 3. The guest, on the phone they are always holding.
     const guestPage = await (await browser.newContext({
       viewport: { width: 390, height: 844 },
+      colorScheme: 'dark',
       isMobile: true,
       hasTouch: true,
       deviceScaleFactor: 2,
     })).newPage();
     await guestPage.goto(`${base}/r/${roomId}`);
     await guestPage.waitForSelector('#guestCard', { state: 'visible' });
-    try { await guestPage.click('#enableAudioBtn', { timeout: 2000 }); } catch (e) { /* autoplay allowed */ }
+    // A phone starts with one tap; a desktop page starts by itself.
+    try { await guestPage.click('#listenBtn', { timeout: 2000 }); } catch (e) { /* no gate */ }
+    try { await guestPage.click('#enableAudioBtn', { timeout: 1500 }); } catch (e) { /* autoplay allowed */ }
     await guestPage.waitForFunction(
       () => document.getElementById('guestStatusTitle').textContent.includes('زنده'),
       { timeout: 15000 },
     );
+    // The name lives in the settings drawer, which stays shut in the shot.
+    await guestPage.click('#guestDrawer > summary');
     await guestPage.fill('#nameInput', 'سارا');
     await guestPage.dispatchEvent('#nameInput', 'blur');
+    await guestPage.click('#guestDrawer > summary');
 
     // A reaction, so the host shot shows the back channel doing its job.
     await guestPage.click('.reaction[data-kind="whatsthis"]');
@@ -107,6 +113,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await guestPage.evaluate(() => window.scrollTo(0, 0));
     await wait(400);
     await shot(guestPage, 'guest');
+
+    // 4. The same guest by day: the page follows the system's light setting.
+    await guestPage.emulateMedia({ colorScheme: 'light' });
+    await wait(400);
+    await shot(guestPage, 'guest-light');
   } finally {
     await browser.close();
     server.kill();

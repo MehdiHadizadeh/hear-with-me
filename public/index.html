@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Hear With Me — هرچی می‌شنوی، اونم بشنوه</title>
-  <meta name="description" content="صدای کامپیوترت رو با یه لینک، زنده برای هرکی بخوای پخش کن؛ گوش دادن هم‌زمان آهنگ با دوست، از هر سایت و هر اپی. بدون نصب، بدون حساب، و صدا هیچ‌جا ذخیره نمی‌شه." />
-  <meta name="theme-color" content="#070910" />
+  <title>Hear With Me | هرچی می‌شنوی، اونم بشنوه</title>
+  <meta name="description" content="صدای کامپیوترت رو با یه لینک، زنده برای هرکی خواستی پخش کن. بدون نصب، بدون حساب، و صدا هیچ‌جا ذخیره نمی‌شه." />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#070910" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F6F7FB" media="(prefers-color-scheme: light)" />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="alternate icon" href="/favicon.ico" sizes="32x32" />
@@ -17,8 +19,8 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Hear With Me" />
   <meta property="og:locale" content="fa_IR" />
-  <meta property="og:title" content="Hear With Me — هرچی می‌شنوی، اونم بشنوه" />
-  <meta property="og:description" content="صدای کامپیوترت رو با یه لینک، زنده برای هرکی بخوای پخش کن. بدون نصب، بدون حساب." />
+  <meta property="og:title" content="Hear With Me | هرچی می‌شنوی، اونم بشنوه" />
+  <meta property="og:description" content="صدای کامپیوترت رو با یه لینک، زنده برای هرکی خواستی پخش کن. بدون نصب، بدون حساب." />
   <meta property="og:url" content="%ORIGIN%/" />
   <meta property="og:image" content="%ORIGIN%/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -30,9 +32,9 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="shell shell--hero">
-    <header>
-      <a class="brand" href="/">
+  <div class="shell shell--landing">
+    <header class="site-head">
+      <a class="brand" href="/" aria-label="Hear With Me، صفحه‌ی اول">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <defs>
             <linearGradient id="ga" x1="4" y1="20" x2="42" y2="20" gradientUnits="userSpaceOnUse">
@@ -48,16 +50,16 @@
           </g>
         </svg>
         <span class="brand-name" lang="en">Hear With Me</span>
-        <span class="brand-aside">با هم بشنویم</span>
       </a>
     </header>
 
-    <main class="hero">
-      <!-- The paths run to x=3200, twice the widest visible slice of the
-           viewBox, and the drift below shifts them by exactly two wavelengths
-           (800). Both numbers matter: a shorter path leaves the right edge
-           empty for part of every cycle, and a shift that isn't a whole
-           number of wavelengths makes the loop visibly jump. -->
+    <main class="landing">
+      <!-- The two strands of the mark, drifting at the pace of a slow track.
+           This is the product's one signature visual, so it stays. The paths
+           run to x=3200, twice the widest visible slice of the viewBox, and
+           the drift shifts them by exactly two wavelengths (800): a shorter
+           path leaves the right edge empty for part of every cycle, and any
+           other shift makes the loop visibly jump. -->
       <div class="wavefield" aria-hidden="true">
         <svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMid slice">
           <g>
@@ -69,75 +71,60 @@
         </svg>
       </div>
 
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <h1 class="hero-title">هرچی می‌شنوی، <em>اونم</em> بشنوه.</h1>
-          <p class="hero-lead" id="heroLead">صدای کامپیوترت رو با یه لینک، زنده برای هرکی بخوای پخش کن: اسپاتیفای، یوتیوب، رادیو، یه فایل؛ هرچی. اون فقط لینک رو باز می‌کنه، حتی با گوشی قفل.</p>
+      <section class="intro">
+        <h1 class="hero-title">هرچی می‌شنوی، <em>اونم</em> بشنوه.</h1>
+        <p class="hero-lead" id="heroLead">صدای کامپیوترت رو با یه لینک، زنده برای هرکی خواستی پخش کن. اون فقط لینک رو باز می‌کنه، حتی با گوشی قفل.</p>
 
-          <button class="btn btn-primary" id="createBtn">ساخت اتاق</button>
+        <div class="intro-actions">
+          <button class="btn btn-primary" id="createBtn" type="button">ساخت اتاق</button>
           <!-- A phone cannot share another app's sound, so the second door on a
                phone is taking this to a computer. -->
-          <button class="btn btn-ghost btn-wide" id="toComputerBtn" type="button" hidden>لینک رو برای کامپیوترم بفرست</button>
-
-          <p class="trust">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <rect x="4" y="10.5" width="16" height="10" rx="2.5"/>
-              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
-            </svg>
-            <span><b>بدون نصب، بدون حساب.</b> صدا هیچ‌جا ذخیره نمی‌شه؛ یا مستقیم بین دو مرورگر می‌ره، یا وقتی گوشی قفله از راه سرور ما.</span>
-          </p>
+          <button class="btn btn-ghost" id="toComputerBtn" type="button" hidden>لینک رو برای کامپیوترم بفرست</button>
         </div>
-      </div>
+        <p class="note">بدون نصب و بدون حساب. صدا هیچ‌جا ذخیره نمی‌شه.</p>
+      </section>
 
-      <div class="below">
-        <div class="divider"><span>یا</span></div>
-
-        <div class="panel">
-          <label class="field-label" for="joinInput">کد اتاق یا لینک دعوت رو داری؟</label>
-          <div class="row">
-            <input type="text" id="joinInput" class="code-input" placeholder="کد شش‌حرفی" maxlength="64"
-                   autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
-            <button class="btn btn-secondary" id="joinBtn">ورود</button>
-          </div>
-          <p class="field-error" id="joinError" role="alert"></p>
+      <section class="panel join" aria-labelledby="joinLabel">
+        <label class="field-label" id="joinLabel" for="joinInput">کد اتاق یا لینک دعوت داری؟</label>
+        <div class="row">
+          <input type="text" id="joinInput" class="code-input" placeholder="کد شش‌حرفی" maxlength="64"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+          <button class="btn btn-secondary" id="joinBtn" type="button">ورود</button>
         </div>
+        <p class="field-error" id="joinError" role="alert"></p>
+      </section>
 
-        <section class="how" aria-labelledby="howTitle">
-          <h2 class="section-title" id="howTitle">چطوری کار می‌کنه</h2>
-          <ol class="steps">
-            <li><span><b>اتاق بساز</b> و لینکش رو برای هرکی خواستی بفرست؛ تو تلگرام، واتس‌اپ، هرجا.</span></li>
-            <li><span><b>تبی که آهنگ توشه رو انتخاب کن</b> و کلید صدا رو روشن کن. از کامپیوتر با <span class="ltr">Chrome</span> یا <span class="ltr">Edge</span>.</span></li>
-            <li><span><b>همون لحظه می‌شنوه.</b> از هر گوشی و هر مرورگری، آیفون هم.</span></li>
-          </ol>
-        </section>
+      <section class="how" aria-labelledby="howTitle">
+        <h2 class="section-title" id="howTitle">چطوری کار می‌کنه</h2>
+        <ol class="steps">
+          <li><span><b>اتاق بساز</b> و لینکش رو برای هرکی خواستی بفرست.</span></li>
+          <li><span><b>تبی که آهنگ توشه رو انتخاب کن</b> و کلید صدا رو روشن کن. روی کامپیوتر، با <span class="ltr">Chrome</span> یا <span class="ltr">Edge</span>.</span></li>
+          <li><span><b>اون همون لحظه می‌شنوه.</b> فقط یه مرورگر لازمه، روی هر گوشی.</span></li>
+        </ol>
+      </section>
 
-        <section class="faq" aria-labelledby="faqTitle">
-          <h2 class="section-title" id="faqTitle">سؤال‌هایی که می‌پرسن</h2>
-          <details>
-            <summary>با آیفون می‌شه؟</summary>
-            <p>برای گوش دادن، بله؛ حتی با صفحه‌ی قفل. برای پخش از آیفون، فقط یه فایل از خود گوشی: هیچ مرورگر موبایلی اجازه نمی‌ده صدای اپ‌های دیگه فرستاده بشه.</p>
-          </details>
-          <details>
-            <summary>چقدر اینترنت مصرف می‌کنه؟</summary>
-            <p>برای کسی که گوش می‌ده، با کیفیت معمولی حدود ۵۸ مگابایت در ساعت و با «کم‌مصرف» حدود ۲۹ مگابایت.</p>
-          </details>
-          <details>
-            <summary>اگه گوشی قفل بشه قطع می‌شه؟</summary>
-            <p>نه، اگه «صفحه‌خاموش» رو انتخاب کنی؛ که روی گوشی پیش‌فرضه. صدا یکی دو ثانیه دیرتر می‌رسه، چون از سرور ما رد می‌شه. «هم‌زمان» بی‌تأخیره، ولی صفحه باید روشن بمونه.</p>
-          </details>
-          <details>
-            <summary>صدا جایی ذخیره می‌شه؟</summary>
-            <p>نه. هیچ حسابی نیست، هیچ ضبطی نیست، و با بسته شدن اتاق هیچ اثری ازش نمی‌مونه.</p>
-          </details>
-          <details>
-            <summary>وصل نمی‌شه؛ چی کار کنم؟</summary>
-            <p>اگه هر دو تو ایرانید و VPN روشنه، خاموشش کنید یا این سایت رو ازش مستثنا کنید. اگه اتصال مستقیم برقرار نشه، صدا خودکار از راه سرور می‌رسه.</p>
-          </details>
-        </section>
-      </div>
+      <section class="faq" aria-labelledby="faqTitle">
+        <h2 class="section-title" id="faqTitle">سؤال‌های رایج</h2>
+        <details>
+          <summary>با آیفون می‌شه؟</summary>
+          <p>برای شنیدن بله، توی مرورگر آیفون (Safari). اپ لازم نیست و اپ آیفون هم نداریم. برای پخش از آیفون فقط می‌شه یه فایل از خود گوشی رو پخش کرد، چون مرورگر موبایل اجازه نمی‌ده صدای اپ‌های دیگه فرستاده بشه.</p>
+        </details>
+        <details>
+          <summary>چقدر اینترنت مصرف می‌کنه؟</summary>
+          <p>برای کسی که گوش می‌ده، با کیفیت معمولی حدود ۵۸ مگابایت در ساعت. با «کم‌مصرف» حدود ۲۹ مگابایت.</p>
+        </details>
+        <details>
+          <summary>اگه گوشی قفل بشه قطع می‌شه؟</summary>
+          <p>نه، اگه «صفحه‌خاموش» رو انتخاب کنی. روی گوشی همین پیش‌فرضه. صدا یکی دو ثانیه دیرتر می‌رسه چون از سرور ما رد می‌شه. «هم‌زمان» بی‌تأخیره ولی صفحه باید روشن بمونه.</p>
+        </details>
+        <details>
+          <summary>وصل نمی‌شه، چی کار کنم؟</summary>
+          <p>اگه VPN روشنه، خاموشش کن یا این سایت رو ازش مستثنا کن. اگه اتصال مستقیم برقرار نشه، صدا خودکار از راه سرور می‌رسه.</p>
+        </details>
+      </section>
     </main>
 
-    <p class="footer-note"><span lang="en">Hear With Me</span> · همین صدا، همین لحظه.</p>
+    <footer class="footer-note"><span lang="en">Hear With Me</span> · همین صدا، همین لحظه.</footer>
   </div>
 
   <script type="module">
@@ -160,7 +147,7 @@
     if (!canCaptureSystemAudio) {
       createBtn.textContent = createLabel;
       toComputerBtn.hidden = false;
-      document.getElementById('heroLead').textContent = 'صدای کامپیوترت رو با یه لینک، زنده برای هرکی بخوای پخش کن. از روی گوشی، یه فایل صوتی از خود گوشی. اون فقط لینک رو باز می‌کنه، حتی با گوشی قفل.';
+      document.getElementById('heroLead').textContent = 'از گوشی می‌تونی یه فایل صوتی پخش کنی. برای پخش بقیه‌ی صداها، لینک رو برای کامپیوترت بفرست.';
     }
 
     toComputerBtn.addEventListener('click', async () => {
@@ -169,7 +156,12 @@
       if (navigator.share) {
         try { await navigator.share({ title: 'Hear With Me', text: 'روی کامپیوتر بازش کن', url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
       }
-      try { await navigator.clipboard.writeText(url); toComputerBtn.textContent = 'لینک کپی شد ✔'; } catch (e) { /* nothing to do */ }
+      try {
+        await navigator.clipboard.writeText(url);
+        toComputerBtn.textContent = 'لینک کپی شد';
+      } catch (e) {
+        showJoinError('کپی نشد. آدرس رو از نوار مرورگر بردار و برای کامپیوترت بفرست.');
+      }
     });
 
     function showJoinError(message) {
@@ -194,16 +186,18 @@
         createBtn.disabled = false;
         createBtn.textContent = createLabel;
         showJoinError(e.message === 'rate-limited'
-          ? 'تعداد اتاق‌هایی که پشت سر هم ساختی زیاده. چند دقیقه صبر کن.'
-          : 'ساخت اتاق با مشکل مواجه شد. دوباره تلاش کن.');
+          ? 'پشت سر هم زیاد اتاق ساختی. چند دقیقه صبر کن.'
+          : e.message === 'server-full'
+            ? 'الان سرور شلوغه. چند دقیقه‌ی دیگه دوباره امتحان کن.'
+            : 'اتاق ساخته نشد. اینترنتت رو چک کن و دوباره بزن.');
       }
     });
 
     joinBtn.addEventListener('click', () => {
       const code = normalizeCode(joinInput.value);
-      if (!code) return showJoinError('کد اتاق رو وارد کن.');
+      if (!code) return showJoinError('کد اتاق رو بنویس.');
       if (!isValidCode(code)) {
-        return showJoinError('این کد معتبر نیست. کد اتاق شش حرفه؛ یا کل لینک دعوت رو همین‌جا بچسبون.');
+        return showJoinError('این کد درست نیست. کد اتاق شش‌حرفیه. می‌تونی کل لینک دعوت رو هم همین‌جا بچسبونی.');
       }
       window.location.href = `/r/${code}`;
     });

@@ -29,7 +29,6 @@ export const ui = Object.freeze({
   footerNote: byId('footerNote'),
 
   // invite
-  shareRow: document.querySelector('.share-row'),
   shareBtn: byId('shareBtn'),
   copyLinkBtn: byId('copyLinkBtn'),
   leaveBtn: byId('leaveBtn'),
@@ -99,19 +98,18 @@ export const ui = Object.freeze({
   listenBtn: byId('listenBtn'),
   modeRelay: byId('modeRelay'),
   modeDirect: byId('modeDirect'),
+  modeChoice: byId('modeChoice'),
+  gateHint: byId('gateHint'),
   reactionRow: byId('reactionRow'),
   moreReactionsBtn: byId('moreReactionsBtn'),
   moreReactions: byId('moreReactions'),
-  guestDrawer: byId('guestDrawer'),
   guestShareBtn: byId('guestShareBtn'),
-  carModeBtn: byId('carModeBtn'),
   endCard: byId('endCard'),
   endDuration: byId('endDuration'),
   endTitle: byId('endTitle'),
   endSub: byId('endSub'),
   hostFromPhoneLink: byId('hostFromPhoneLink'),
   sendToSelfBtn: byId('sendToSelfBtn'),
-  storyBtn: byId('storyBtn'),
   nameInput: byId('nameInput'),
   receiveQuality: byId('receiveQuality'),
   wakeLockRow: byId('wakeLockRow'),
@@ -123,13 +121,6 @@ export const ui = Object.freeze({
   remoteAudio: byId('remoteAudio'),
   enableAudioOverlay: byId('enableAudioOverlay'),
   enableAudioBtn: byId('enableAudioBtn'),
-
-  // car mode
-  carMode: byId('carMode'),
-  carExitBtn: byId('carExitBtn'),
-  carTitle: byId('carTitle'),
-  carState: byId('carState'),
-  carPlayBtn: byId('carPlayBtn'),
 });
 
 // Every connection state gets its own colour, glyph and motion, not just a

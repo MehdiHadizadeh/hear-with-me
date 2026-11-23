@@ -25,7 +25,7 @@ AudioPlaybackCapture ─► AudioRecord (PCM 48k stereo)
         ─► POST /api/rooms/{code}/relay?gen=…&seq=…   (X-HWM-Client / X-HWM-Secret)
 ```
 
-Every guest then listens on the screen-off path — about two seconds late,
+Every guest then listens on the screen-off path, about two seconds late,
 playing on a locked phone, crossing networks without UDP. No libwebrtc, no
 signaling code in Kotlin, and no change to any guest or to either server. The
 direct path can come later if anyone misses the lower delay.
@@ -35,7 +35,7 @@ direct path can come later if anyone misses the lower delay.
 A **Capacitor** shell around the existing web client:
 
 - The web UI runs unchanged in the WebView: joining, the roster, reactions,
-  the link to share. `public/js/platform.js` is the seam — in the shell it
+  the link to share. `public/js/platform.js` is the seam: in the shell it
   reports `canCaptureSystemAudio = true` and routes "start sharing" to the
   native plugin instead of `getDisplayMedia`.
 - One native plugin, `SystemAudio`, with `start({ roomId, clientId, secret,
@@ -60,10 +60,3 @@ Roughly two weeks for the relay-only MVP (capture service, AAC framing,
 uploader, plugin bridge), plus a week on real devices: Samsung One UI, Xiaomi
 HyperOS, a Pixel. The worth-it test before starting: whether the counters
 show many people pressing "create room" from a phone.
-
-## iPhone, for when there is an Apple developer account
-
-The same shell builds for iOS. Two things it would add: background audio for
-guests on the direct path (`UIBackgroundModes: audio`), and hosting through a
-ReplayKit broadcast extension encoding AAC to the same relay — knowing that
-Apple Music and other DRM'd audio come out silent.

@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>اتاق Hear With Me — همین صدا، همین لحظه</title>
-  <meta name="description" content="این اتاق زنده‌ست: همون صدایی که میزبان می‌شنوه، همون لحظه به تو می‌رسه. بدون نصب، بدون حساب." />
-  <meta name="theme-color" content="#070910" />
+  <title>اتاق Hear With Me | همین صدا، همین لحظه</title>
+  <meta name="description" content="این اتاق زنده‌ست. همون صدایی که میزبان می‌شنوه، همون لحظه به تو می‌رسه. بدون نصب، بدون حساب." />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#070910" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F6F7FB" media="(prefers-color-scheme: light)" />
 
   <!-- Filled in by whichever server is hosting this: "sse" for the Node
        server, "ws" for an edge runtime that cannot hold a response open. -->
@@ -23,7 +25,7 @@
   <meta property="og:site_name" content="Hear With Me" />
   <meta property="og:locale" content="fa_IR" />
   <!-- Filled in per room by the server (public/shared/preview.js): whose room
-       this is and whether it is live — the two things that make someone tap. -->
+       this is and whether it is live, the two things that make someone tap. -->
   <meta property="og:title" content="%OG_TITLE%" />
   <meta property="og:description" content="%OG_DESCRIPTION%" />
   <meta property="og:image" content="%ORIGIN%/og-room.png" />
@@ -40,7 +42,7 @@
     <header class="room-head">
       <!-- The lockup stays at every width: on a phone it is the only place a
            guest learns what they just opened. -->
-      <a class="brand" href="/">
+      <a class="brand" href="/" aria-label="Hear With Me، صفحه‌ی اول">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <defs>
             <linearGradient id="ga" x1="4" y1="20" x2="42" y2="20" gradientUnits="userSpaceOnUse">
@@ -70,7 +72,7 @@
           </button>
         </div>
         <!-- Closing the tab worked, but only after a grace period nobody could
-             see — and on a phone app there is no tab to close. -->
+             see, and on a phone app there is no tab to close. -->
         <button class="leave-btn" id="leaveBtn" type="button" style="display:none;" title="خروج از اتاق">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/>
@@ -101,8 +103,7 @@
     </div>
 
     <!-- One banner for anything that has to stay on screen until it is read.
-         It can always be dismissed: the version without a close button sat
-         there for the rest of the session. -->
+         It can always be dismissed. -->
     <div class="notice" id="notice" role="status">
       <span class="notice-text" id="noticeText"></span>
       <button class="notice-close" id="noticeClose" type="button" aria-label="بستن این پیام">×</button>
@@ -152,7 +153,7 @@
           <div class="livebox" id="hostLiveBox" style="display:none;">
             <div class="live-row">
               <span class="elapsed" id="hostElapsed">۰:۰۰</span>
-              <span class="live-hint" id="hostMeterHint">اگه میله‌ها تکون نمی‌خورن، یعنی صدایی گرفته نمی‌شه</span>
+              <span class="live-hint" id="hostMeterHint">اگه میله‌ها تکون نمی‌خورن، صدایی گرفته نمی‌شه.</span>
             </div>
 
             <!-- A file playing from this device: the host is its player. -->
@@ -160,31 +161,23 @@
               <button class="btn btn-secondary" id="filePlayBtn" type="button">مکث</button>
               <span class="file-name" id="fileName"></span>
             </div>
-
           </div>
         </div>
 
-        <!-- Rehearsed before the browser's own picker covers the page: the one
+        <!-- Said before the browser's own picker covers the page: the one
              switch that decides whether anyone hears anything. Open the first
              time; after that it waits behind its summary. -->
         <details class="rehearsal" id="hostRehearsal" open>
           <summary>قبل از شروع: کلید صدا رو یادت نره</summary>
           <ol class="steps">
             <li><span><b>تبی که آهنگ توشه</b> رو انتخاب کن. برای صدای یه اپ، «<span class="ltr">Entire screen</span>» رو بزن.</span></li>
-            <li><span><b>کلید صدا رو روشن کن.</b> اسمش <span class="ltr">Also share tab audio</span> یا <span class="ltr">Share system audio</span>ه.</span></li>
+            <li><span><b>کلید صدا رو روشن کن.</b> اسمش <span class="ltr">Also share tab audio</span> یا <span class="ltr">Share system audio</span> نوشته شده.</span></li>
             <li><span>«<span class="ltr">Share</span>» رو بزن. چند ثانیه گوش می‌دیم تا مطمئن شیم صدا میاد.</span></li>
           </ol>
-          <figure class="picker-sketch" aria-hidden="true">
-            <div class="ps-head"><span class="ltr">Choose what to share</span></div>
-            <div class="ps-tabs"><span class="on ltr">Chrome Tab</span><span class="ltr">Window</span><span class="ltr">Entire Screen</span></div>
-            <div class="ps-row on ltr">Music · Web Player</div>
-            <div class="ps-row ltr">Inbox</div>
-            <div class="ps-audio"><span class="ltr">Also share tab audio</span><span class="ps-switch"></span><span class="ps-pin">اینو روشن کن</span></div>
-          </figure>
         </details>
 
-        <div class="stack" id="hostActions">
-          <button class="btn btn-primary" id="startShareBtn">شروع پخش صدا</button>
+        <div class="actions" id="hostActions">
+          <button class="btn btn-primary" id="startShareBtn" type="button">شروع پخش صدا</button>
           <!-- Phones cannot capture another app's sound, but they can play a
                file of their own into the room. -->
           <label class="btn btn-secondary file-pick" id="fileShareLabel">
@@ -193,8 +186,8 @@
           </label>
           <!-- Swapping the captured tab re-points the existing connections
                instead of tearing them down, so nobody drops out. -->
-          <button class="btn btn-secondary" id="switchSourceBtn" style="display:none;">تعویض منبع صدا</button>
-          <button class="btn btn-ghost" id="stopShareBtn" style="display:none;">توقف پخش</button>
+          <button class="btn btn-secondary" id="switchSourceBtn" type="button" style="display:none;">تعویض منبع صدا</button>
+          <button class="btn btn-ghost btn-stop" id="stopShareBtn" type="button" style="display:none;">توقف پخش</button>
           <label class="toggle" id="micRow" style="display:none;">
             <input type="checkbox" id="micToggle" />
             <span id="micText">میکروفونم روشن بشه: قبل از انتخاب آهنگ هم می‌شه حرف زد</span>
@@ -207,23 +200,22 @@
         <div class="panel">
           <div class="field">
             <label class="tool-label" for="hostNameInput">اسمت</label>
-            <input type="text" id="hostNameInput" maxlength="24" placeholder="مثلاً مهدی" autocomplete="nickname" />
-            <p class="tool-hint">تو پیش‌نمایش لینک می‌آد: «مهدی داره زنده پخش می‌کنه».</p>
+            <input type="text" id="hostNameInput" maxlength="24" placeholder="اسمی که مهمان‌ها ببینن" autocomplete="nickname" />
+            <p class="tool-hint">تو پیش‌نمایش لینک نشون داده می‌شه.</p>
           </div>
 
           <!-- Beside the name, not under the meter: it is a label for the
                guests, typed once, not something to watch while sharing. -->
           <div class="field np-field" id="nowPlayingField" style="display:none;">
-            <label class="tool-label" for="nowPlayingInput">اسم آهنگ <span class="np-optional">· اختیاری</span></label>
+            <label class="tool-label" for="nowPlayingInput">اسم آهنگ <span class="np-optional">(اختیاری)</span></label>
             <div class="row">
-              <input type="text" id="nowPlayingInput" maxlength="120" placeholder="مثلاً Radiohead · Weird Fishes" />
-              <button class="btn btn-secondary" id="nowPlayingBtn">ثبت</button>
+              <input type="text" id="nowPlayingInput" maxlength="120" placeholder="بالای صفحه‌ی مهمان‌ها نشون داده می‌شه" />
+              <button class="btn btn-secondary" id="nowPlayingBtn" type="button">ثبت</button>
             </div>
-            <p class="tool-hint">بالای صفحه‌ی مهمان‌ها نشون داده می‌شه.</p>
           </div>
 
           <div class="share-row">
-            <button class="btn btn-ghost" id="shareBtn" type="button">فرستادن لینک دعوت</button>
+            <button class="btn btn-primary" id="shareBtn" type="button">فرستادن لینک دعوت</button>
             <!-- The host is on a desktop and the guest is holding a camera, so
                  the shortest path between them is a camera, not a clipboard. -->
             <button class="btn btn-ghost" id="qrBtn" type="button" aria-expanded="false" aria-controls="qrPanel">کد QR</button>
@@ -246,23 +238,23 @@
             <div class="tool-row">
               <label class="tool-label" for="qualitySelect">کیفیت صدا</label>
               <select id="qualitySelect" class="select">
-                <option value="high">بالا · ۲۵۶ کیلوبیت</option>
-                <option value="normal">معمولی · ۱۲۸ کیلوبیت</option>
-                <option value="low">کم‌مصرف · ۶۴ کیلوبیت</option>
+                <option value="high">بالا (۲۵۶ کیلوبیت)</option>
+                <option value="normal">معمولی (۱۲۸ کیلوبیت)</option>
+                <option value="low">کم‌مصرف (۶۴ کیلوبیت)</option>
               </select>
             </div>
             <p class="tool-hint">روی اینترنت همراه، «کم‌مصرف» مصرف مهمان رو حدود چهار برابر کم می‌کنه.</p>
             <label class="toggle">
               <input type="checkbox" id="lockToggle" />
-              <span>قفل کردن اتاق: کسی جز افراد فعلی وارد نشه</span>
+              <span>قفل اتاق: کسی جز افراد فعلی نمی‌تونه وارد بشه</span>
             </label>
             <label class="toggle">
               <input type="checkbox" id="handOverToggle" />
-              <span>با رفتن من، میزبانی به نفر بعدی برسه. وگرنه اتاق با رفتنم بسته می‌شه.</span>
+              <span>با رفتن من، میزبانی به نفر بعدی برسه. وگرنه اتاق بسته می‌شه.</span>
             </label>
             <label class="toggle">
               <input type="checkbox" id="directOnlyToggle" />
-              <span>فقط مستقیم: صدا هیچ‌وقت از سرور رد نشه. اون‌وقت مهمان‌ها با گوشی قفل نمی‌شنون و بعضی شبکه‌ها وصل نمی‌شن.</span>
+              <span>فقط مستقیم: صدا از سرور رد نشه. مهمانی که گوشیش قفله نمی‌شنوه و بعضی شبکه‌ها وصل نمی‌شن.</span>
             </label>
           </div>
         </details>
@@ -271,7 +263,6 @@
 
     <!-- ============================== GUEST ============================= -->
     <div class="guest-layout" id="guestCard" style="display:none;">
-      <!-- Act one: who is playing for you. -->
       <section class="guest-hero">
         <p class="guest-who" id="guestWho">یکی داره برات پخش می‌کنه</p>
         <p class="now-playing" id="guestNowPlaying" style="display:none;"></p>
@@ -289,8 +280,8 @@
                  because a flat meter would say there is no sound. -->
             <div class="glyph glyph-live">
               <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke-width="4.6" stroke-linecap="round">
-                <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="#3FE0BE"/>
-                <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="#8C7CFF"/>
+                <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="#2FD4B2"/>
+                <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="#7B69FF"/>
               </svg>
             </div>
             <div class="meter idle" id="guestMeter" aria-hidden="true"></div>
@@ -306,26 +297,16 @@
           <div class="livebox" id="guestLiveBox" style="display:none;">
             <div class="live-row">
               <span class="elapsed" id="guestElapsed">۰:۰۰</span>
-              <span class="path-chip" id="pathChip"></span>
+              <span class="path-label" id="pathChip"></span>
             </div>
           </div>
         </div>
 
-        <!-- The first tap. It unlocks audio (the autoplay gesture) and is where
-             the guest chooses how to listen, with the cost of each said out
-             loud. On a desktop the page simply starts and this stays hidden. -->
+        <!-- The first tap. It unlocks audio (the browser's autoplay rule). On a
+             desktop the page simply starts and this stays hidden. -->
         <div class="listen-gate" id="listenGate" style="display:none;">
-          <div class="mode-choice" role="radiogroup" aria-label="چطوری گوش بدی">
-            <button type="button" class="mode" id="modeRelay" role="radio" aria-checked="true">
-              <b>صفحه‌خاموش</b>
-              <span>گوشی رو قفل کنی هم پخش می‌شه. یکی دو ثانیه دیرتر می‌رسه و از سرور ما رد می‌شه، ولی هیچ‌جا ذخیره نمی‌شه.</span>
-            </button>
-            <button type="button" class="mode" id="modeDirect" role="radio" aria-checked="false">
-              <b>هم‌زمان</b>
-              <span>بی‌تأخیر و مستقیم بین دو مرورگر. صفحه باید روشن بمونه.</span>
-            </button>
-          </div>
           <button class="btn btn-primary" id="listenBtn" type="button">گوش بده</button>
+          <p class="note" id="gateHint">با یه لمس شروع می‌شه. با قفل شدن گوشی هم قطع نمی‌شه.</p>
         </div>
 
         <div class="volume-row">
@@ -338,14 +319,12 @@
           </button>
           <input type="range" id="volumeBar" min="0" max="1" value="1" step="0.01" aria-label="شدت صدا" />
         </div>
-        <p class="note note-stacked" id="volumeHint" style="display:none;">این دستگاه اجازه‌ی تنظیم صدا از داخل صفحه رو نمی‌ده؛ با دکمه‌های خود گوشی کم و زیادش کن. دکمه‌ی کناری صدا رو کامل قطع و وصل می‌کنه.</p>
-        <p class="note note-stacked" id="backgroundHint" style="display:none;"></p>
+        <p class="note" id="volumeHint" style="display:none;">این دستگاه اجازه نمی‌ده صدا از داخل صفحه تنظیم بشه. با دکمه‌های خود گوشی کم و زیادش کن.</p>
+        <p class="note" id="backgroundHint" style="display:none;"></p>
 
         <!-- The audio path is one-way by design, so this is the whole of the
-             listener's voice: four cheers a thumb can reach, one question,
-             and the three things that can go wrong behind one button — a
-             wall of six equal chips made "no sound" as casual as a heart.
-             Off until there is something to react to. -->
+             listener's voice: four cheers a thumb can reach, one question, and
+             the things that can go wrong behind one button. -->
         <div class="react-bar" id="reactionRow" role="group" aria-label="واکنش به چیزی که پخش می‌شه">
           <div class="cheers">
             <button class="reaction cheer" type="button" data-kind="love" aria-label="دوستش دارم">❤️</button>
@@ -355,10 +334,7 @@
           </div>
           <div class="asks">
             <button class="reaction ask" type="button" data-kind="whatsthis">این آهنگ چیه؟</button>
-            <button class="reaction ask problem-toggle" type="button" id="moreReactionsBtn" aria-expanded="false" aria-controls="moreReactions">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="M16 10l5 5m0-5-5 5"/></svg>
-              مشکل صدا
-            </button>
+            <button class="reaction ask problem-toggle" type="button" id="moreReactionsBtn" aria-expanded="false" aria-controls="moreReactions">مشکل صدا</button>
           </div>
           <div class="problems" id="moreReactions" hidden>
             <p class="problems-title">به میزبان بگو چی شده:</p>
@@ -369,30 +345,37 @@
         </div>
       </div>
 
-      <!-- Act three: when it ends, what the guest keeps. -->
+      <!-- When it ends, what the guest keeps. -->
       <section class="panel end-card" id="endCard" style="display:none;">
-        <svg class="end-mark" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke-width="4.6" stroke-linecap="round">
-          <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20" stroke="#3FE0BE"/>
-          <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" stroke="#8C7CFF"/>
-        </svg>
         <p class="end-duration" id="endDuration"></p>
         <h2 class="end-title" id="endTitle">تو هم می‌تونی برای یکی پخش کنی.</h2>
         <p class="end-sub" id="endSub"></p>
         <div class="stack">
           <button class="btn btn-primary" id="sendToSelfBtn" type="button">لینک رو برای کامپیوترم بفرست</button>
           <a class="btn btn-secondary btn-link" href="/" id="hostFromPhoneLink">ساخت اتاق خودم</a>
-          <button class="btn btn-ghost" id="storyBtn" type="button">کارت استوری</button>
         </div>
       </section>
 
       <details class="panel drawer" id="guestDrawer">
-        <summary>تنظیمات و دعوت</summary>
+        <summary>تنظیمات</summary>
         <div class="tools">
           <div class="tool-row">
             <label class="tool-label" for="nameInput">اسمت</label>
             <input type="text" id="nameInput" maxlength="24" autocomplete="nickname" />
           </div>
-          <p class="tool-hint">میزبان اسمت رو کنار واکنش‌هات می‌بینه؛ وگرنه «مهمان ۱».</p>
+          <p class="tool-hint">میزبان اسمت رو کنار واکنش‌هات می‌بینه. اگه ننویسی «مهمان ۱» می‌شی.</p>
+
+          <fieldset class="mode-choice" id="modeChoice">
+            <legend class="tool-label">روش پخش</legend>
+            <label class="choice">
+              <input type="radio" name="listenMode" id="modeRelay" value="relay" />
+              <span><b>صفحه‌خاموش</b> گوشی قفل بشه هم پخش می‌شه. یکی دو ثانیه دیرتر می‌رسه و از سرور ما رد می‌شه.</span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="listenMode" id="modeDirect" value="direct" />
+              <span><b>هم‌زمان</b> بی‌تأخیر و مستقیم. صفحه باید روشن بمونه.</span>
+            </label>
+          </fieldset>
 
           <div class="tool-row">
             <label class="tool-label" for="receiveQuality">کیفیت صدا</label>
@@ -408,10 +391,7 @@
             <span>صفحه روشن بمونه (برای حالت هم‌زمان)</span>
           </label>
 
-          <div class="drawer-actions">
-            <button class="btn btn-ghost" id="guestShareBtn" type="button">یکی دیگه رو هم دعوت کن</button>
-            <button class="btn btn-ghost" id="carModeBtn" type="button">حالت ماشین</button>
-          </div>
+          <button class="btn btn-ghost" id="guestShareBtn" type="button">یکی دیگه رو هم دعوت کن</button>
         </div>
       </details>
     </div>
@@ -419,32 +399,16 @@
     <p class="footer-note" id="footerNote">همین صدا، همین لحظه. صدا هیچ‌جا ذخیره نمی‌شه.</p>
   </div>
 
-  <!-- Car mode: what a phone on a dashboard can safely show. -->
-  <div class="car-mode" id="carMode" hidden>
-    <button class="car-exit" id="carExitBtn" type="button" aria-label="بستن حالت ماشین">×</button>
-    <div class="car-who">
-      <p class="car-title" id="carTitle">در حال پخش</p>
-      <p class="car-state" id="carState">زنده</p>
-    </div>
-    <button class="car-play" id="carPlayBtn" type="button" aria-pressed="false" aria-label="بی‌صدا کردن">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="car-pause" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/><path class="car-resume" d="M8 5l11 7-11 7z"/></svg>
-    </button>
-  </div>
-
-  <div class="enable-audio-overlay hidden" id="enableAudioOverlay">
+  <div class="enable-audio-overlay hidden" id="enableAudioOverlay" role="dialog" aria-modal="true" aria-labelledby="enableAudioText">
     <div class="inner">
-      <svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true" fill="none" stroke="#3FE0BE" stroke-width="4.6" stroke-linecap="round" style="margin-inline:auto;display:block">
-        <path d="M4 20C10.3 8 16.7 8 23 20C29.3 32 35.7 32 42 20"/>
-        <path d="M4 29C10.3 17 16.7 17 23 29C29.3 41 35.7 41 42 29" opacity=".5"/>
-      </svg>
-      <p>یه بار لمس کن تا صدا شروع بشه.</p>
-      <button class="btn btn-primary" id="enableAudioBtn">گوش بده</button>
+      <p id="enableAudioText">یه بار لمس کن تا صدا شروع بشه.</p>
+      <button class="btn btn-primary" id="enableAudioBtn" type="button">گوش بده</button>
     </div>
   </div>
 
   <audio id="remoteAudio" autoplay playsinline></audio>
   <!-- ES modules: app.js imports the rest of ./js and ./shared itself. No
-       build step, no bundler — the browser resolves them. -->
+       build step, no bundler: the browser resolves them. -->
   <script type="module" src="/app.js"></script>
 </body>
 </html>

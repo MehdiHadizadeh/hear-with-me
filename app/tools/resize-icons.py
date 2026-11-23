@@ -1,5 +1,5 @@
 """Cuts the rendered 1024px icon, adaptive foreground and splash mark into
-every size Android and iOS ask for. Called by make-icons.mjs."""
+every size Android asks for. Called by make-icons.mjs."""
 import glob
 import os
 import sys
@@ -37,19 +37,3 @@ for path in glob.glob(os.path.join(res, 'drawable*', 'splash.png')):
     canvas.paste(m, ((w - side) // 2, (h - side) // 2), m)
     canvas.convert('RGB').save(path)
 
-ios_icon = os.path.join(app, 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset')
-if os.path.isdir(ios_icon):
-    for path in glob.glob(os.path.join(ios_icon, '*.png')):
-        w, h = Image.open(path).size
-        full.resize((w, h), Image.LANCZOS).convert('RGB').save(path)  # iOS icons may not be transparent
-
-ios_splash = os.path.join(app, 'ios', 'App', 'App', 'Assets.xcassets', 'Splash.imageset')
-if os.path.isdir(ios_splash):
-    for path in glob.glob(os.path.join(ios_splash, '*.png')):
-        w, h = Image.open(path).size
-        canvas = Image.new('RGBA', (w, h), INK)
-        side = int(min(w, h) * 0.32)
-        m = mark.resize((side, side), Image.LANCZOS)
-        canvas.paste(m, ((w - side) // 2, (h - side) // 2), m)
-        canvas.convert('RGB').save(path)
-print('icons written')

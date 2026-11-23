@@ -171,8 +171,16 @@ public class SystemAudioPlugin extends Plugin {
         boolean on = call.getBoolean("on", false);
         Intent intent = new Intent(getContext(), ListenService.class);
         if (on) {
-            intent.putExtra(ListenService.EXTRA_TITLE, call.getString("title", "Hear With Me"));
-            ContextCompat.startForegroundService(getContext(), intent);
+            if (!ListenService.running) {
+                intent.putExtra(ListenService.EXTRA_TITLE, call.getString("title", "Hear With Me"));
+                try {
+                    ContextCompat.startForegroundService(getContext(), intent);
+                } catch (RuntimeException e) {
+                    // Android 12+ refuses this while the app is in the background
+                    // (a guest reconnecting with the screen off). The page's own
+                    // <audio> keeps playing; only the notification is missed.
+                }
+            }
         } else {
             getContext().stopService(intent);
         }

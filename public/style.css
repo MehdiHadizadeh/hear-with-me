@@ -1,23 +1,20 @@
 /* =====================================================================
-   Hear With Me — visual system
+   Hear With Me: visual system
    ---------------------------------------------------------------------
-   THESIS: a room you can *see* hearing. The page is an instrument panel
-   for one live signal shared between two people, not a marketing hero
-   with three feature cards under it.
-   OWN-WORLD: deep ink ground, hairline panels with no shadow, and two
-   named voices — aqua (#3FE0BE, the signal) and violet (#8C7CFF, the
-   second listener) — the same two strands as the mark. They reappear as
-   the meter, the state ring, and the live pill. Vazirmatn throughout.
-   STORY: a wave is already moving before you read anything; you learn
-   the audio never touches the server; you press one button.
-   FIRST VIEWPORT: wave field behind a two-line Persian headline, the
-   aqua action directly beneath it, the privacy sentence beneath that,
-   join-by-code as the quiet second door. No scrolling required.
-   FORM: patch bay at night — flat panels, hairlines, one lit signal.
+   One idea: two voices on one wave. Teal is the signal, violet is the
+   second listener, the same two strands as the logo. They show up in the
+   landing wave, the level meter and the mark, and nowhere else. Everything
+   else is flat: one ground, one panel colour, hairlines, no shadows.
+
+   Dark is the default because this is listened to in the evening, on a
+   phone, in a dark room or a car. A light scheme follows the system
+   setting for daytime. Both come from the same tokens below.
+
+   Dials: ENERGY 1 / RHYTHM 2 / MOTION 1. The only thing that moves on its
+   own is the landing wave and the live meter; both are the product.
+   Typeface: Vazirmatn, drawn for Persian, self-hosted.
    ===================================================================== */
 
-/* Self-hosted so a blocked or slow CDN can never hold the page hostage;
-   local() first so anyone who already has Vazirmatn downloads nothing. */
 @font-face {
   font-family: 'Vazirmatn';
   src: local('Vazirmatn'),
@@ -29,74 +26,109 @@
 }
 
 :root {
-  /* Every native control the page uses — checkboxes, the select's popup, the
-     range track, the scrollbar — is painted by the browser, and without this
-     it paints them for a light page: white boxes on an ink panel. */
-  color-scheme: dark;
+  color-scheme: dark light;
 
   /* ground */
-  --ink: #070910;
-  --ink-2: #0B0E18;
-  --ink-3: #0D111C;   /* a field with the cursor in it */
+  --bg: #070910;
   --panel: #10141F;
   --panel-2: #161B29;
-  --panel-3: #1D2436; /* the same control, under the pointer */
-  --line: #212739;
-  --line-strong: #2E3650;
-  --line-soft: #191E2D;
+  --panel-3: #1D2436;
+  --field: #0B0E18;
+  --line: #262D43;
+  --line-strong: #3A4463;
+  --line-soft: #1B2132;
 
-  /* type */
+  /* type: 8.1:1, 5.3:1 on --bg */
   --text: #E9ECF5;
-  --muted: #9BA5C0;   /* 8.1:1 on --ink, 7.5:1 on --panel */
-  --faint: #7A849E;   /* 5.3:1 on --ink, 4.9:1 on --panel — small print only */
+  --muted: #9BA5C0;
+  --faint: #7F8AA6;
 
   /* the two voices */
-  --signal: #3FE0BE;       /* 12.0:1 on --ink */
-  --signal-deep: #16A98B;
-  --signal-ink: #04140F;   /* 11.4:1 on --signal */
-  --voice-2: #8C7CFF;      /* 6.1:1 on --ink */
+  --signal: #3FE0BE;       /* accent used as text, icon and border */
+  --signal-fill: #3FE0BE;  /* primary button background */
+  --on-signal: #04140F;    /* 11:1 on --signal-fill */
+  --violet: #8C7CFF;
+  --wave-1: #2FD4B2;
+  --wave-2: #7B69FF;
+  --wave-alpha: .3;
 
-  /* state colours: separated by hue *and* lightness, never colour alone */
+  /* state colours: also told apart by wording and glyph, never colour alone */
   --st-live: #3FE0BE;
   --st-wait: #F2B441;
-  --st-connect: #8C7CFF;
-  --st-idle: #7C89A6;
+  --st-idle: #8591AD;
   --st-alert: #FF7C88;
+  --alert-text: #FFC2C8;
+  --on-alert: #1A0508;
 
-  --st: var(--st-idle); /* whatever the current state sets */
+  --qr-bg: #E9ECF5;
+  --scrim: rgba(7, 9, 16, .8);
 
-  --r-panel: 16px;
-  --r-control: 12px;
+  --r-panel: 14px;
+  --r-control: 10px;
   --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F6F7FB;
+    --panel: #FFFFFF;
+    --panel-2: #EEF0F7;
+    --panel-3: #E3E6F1;
+    --field: #FFFFFF;
+    --line: #CDD3E4;
+    --line-strong: #98A1BE;
+    --line-soft: #E1E5F0;
+
+    --text: #12151F;
+    --muted: #444D69;   /* 8.0:1 on white */
+    --faint: #5A6483;   /* 5.9:1 on white, 5.4:1 on --bg */
+
+    --signal: #0A7A66;       /* 5.4:1 on white */
+    --signal-fill: #16B696;
+    --on-signal: #03130E;    /* 8.4:1 on --signal-fill */
+    --violet: #5B4BDB;
+    --wave-alpha: .42;
+
+    --st-live: #0A7A66;
+    --st-wait: #9A5F00;
+    --st-idle: #5A6483;
+    --st-alert: #C0283A;
+    --alert-text: #9E1B2B;
+    --on-alert: #FFFFFF;
+
+    --scrim: rgba(246, 247, 251, .88);
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  background: var(--ink);
+  background: var(--bg);
   -webkit-text-size-adjust: 100%;
-  /* The wave field is deliberately wider than the viewport. Clipping here
-     (rather than on body alone) is what stops it adding a horizontal scroll
-     and shoving the RTL column sideways. */
+  /* The landing wave is wider than the viewport; clipping here is what stops
+     it adding a sideways scroll to an RTL page. */
   overflow-x: hidden;
   overflow-x: clip;
+  scrollbar-color: var(--line-strong) var(--bg);
 }
 
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--ink);
+  background: var(--bg);
   color: var(--text);
   font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   overflow-x: clip;
 }
 
-h1, h2, h3, p { margin: 0; }
-a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+h1, h2, h3, p, fieldset { margin: 0; }
+fieldset { padding: 0; border: 0; min-width: 0; }
+a { color: var(--signal); text-underline-offset: 3px; }
+::selection { background: color-mix(in srgb, var(--signal) 30%, transparent); color: var(--text); }
 
 :focus-visible {
   outline: 2px solid var(--signal);
@@ -104,8 +136,17 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   border-radius: 4px;
 }
 
-/* Latin runs (room codes, "Chrome", track names) inside Persian prose. */
 .ltr { direction: ltr; unicode-bidi: isolate; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------------------------------------------------------------- shell */
 
@@ -113,32 +154,26 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   width: 100%;
   max-width: 560px;
   margin-inline: auto;
-  /* viewport-fit=cover hands us the whole screen, status bar and notch
-     included — in the phone apps and in an installed web app alike — so the
-     top padding has to clear them itself. */
-  padding: calc(20px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+  /* viewport-fit=cover hands over the whole screen, notch included, so the
+     padding clears it. */
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px))
+           calc(36px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
   min-height: 100svh;
 }
-/* The landing page gets a little more room than the room page — the host,
-   the only person who can share audio, is always on a desktop — but not so
-   much that a single column of text has to stretch across it. */
-.shell--hero { max-width: 720px; }
-
-/* ----------------------------------------------------------- brand lockup */
+.shell--landing { max-width: 620px; }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
+  min-width: 44px;
   text-decoration: none;
   color: inherit;
 }
 .brand svg { width: 34px; height: 34px; flex: none; }
-/* The wordmark is a three-word sentence, not a coined word: it needs to sit
-   quieter than a short brand would, and on the room page it shares the header
-   with the code plate. */
 .brand-name {
   font-size: 18px;
   font-weight: 700;
@@ -148,65 +183,105 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   white-space: nowrap;
 }
 
-/* ------------------------------------------------------------------ hero */
-
-.hero {
-  position: relative;
-  padding: 34px 0 8px;
+.footer-note {
+  margin-top: auto;
+  padding-top: 40px;
+  color: var(--faint);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.7;
 }
 
-/* The wave field is the product's own material, not an ornament: the same
-   two strands as the mark, moving at the pace of a slow track. */
+/* -------------------------------------------------------------- landing */
+
+.landing { position: relative; padding-top: 28px; }
+.landing > :not(.wavefield) { position: relative; z-index: 1; }
+
+/* The wave sits behind the headline only and fades out before the lead
+   text, so it is never under a line someone has to read. */
 .wavefield {
   position: absolute;
-  inset: -60px -50vw auto;
-  height: 300px;
+  inset: -50px -50vw auto;
+  height: 250px;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  -webkit-mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
-  mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(110% 70% at 50% 35%, #000 25%, transparent 75%);
+  mask-image: radial-gradient(110% 70% at 50% 35%, #000 25%, transparent 75%);
 }
 .wavefield svg { display: block; width: 200%; height: 100%; }
 .wavefield path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
-.wavefield .w1 { stroke: var(--signal); opacity: .30; }
-.wavefield .w2 { stroke: var(--voice-2); opacity: .26; }
-.wavefield g {
-  animation: drift 26s linear infinite;
-  transform-origin: 0 0;
-}
+.wavefield .w1 { stroke: var(--wave-1); opacity: var(--wave-alpha); }
+.wavefield .w2 { stroke: var(--wave-2); opacity: calc(var(--wave-alpha) - .04); }
+.wavefield g { animation: drift 26s linear infinite; }
 .wavefield .lag { animation-duration: 34s; }
-/* In user units, not a percentage: `-50%` resolves against the path's own
-   bounding box, which slid the wave clean off the right half of the field
-   before snapping back. 800 is two wavelengths of the path above. */
+/* In user units, not a percentage: 800 is two wavelengths of the path. */
 @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-800px); } }
 
 .hero-title {
-  position: relative;
-  font-size: clamp(29px, 7.4vw, 44px);
+  font-size: clamp(30px, 8vw, 46px);
   line-height: 1.3;
   font-weight: 800;
   letter-spacing: -0.025em;
   text-wrap: balance;
   margin-bottom: 14px;
 }
-.hero-title em {
-  font-style: normal;
-  color: var(--signal);
-}
+.hero-title em { font-style: normal; color: var(--signal); }
 .hero-lead {
-  position: relative;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 17px;
   max-width: 46ch;
   margin-bottom: 26px;
 }
+.intro-actions { display: grid; gap: 10px; }
+.intro .note { margin-top: 14px; }
 
-/* The landing page used to carry a mock room panel with a CSS-animated meter.
-   It was the only dishonest signal in a product whose entire claim is that the
-   meter reads the real audio — so there is nothing here now but the headline,
-   the action, and the door for people who already have a code. */
-.hero-grid { position: relative; }
-.below { max-width: 560px; margin-inline: auto; }
+.join { margin-top: 32px; }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 44px 0 14px;
+}
+
+.faq { display: grid; gap: 8px; }
+.faq .section-title { margin-bottom: 6px; }
+.faq details { border: 1px solid var(--line-soft); border-radius: var(--r-control); background: var(--panel); }
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+}
+.faq summary::-webkit-details-marker,
+.drawer > summary::-webkit-details-marker,
+.rehearsal > summary::-webkit-details-marker { display: none; }
+.faq summary::after,
+.drawer > summary::after {
+  content: "";
+  width: 8px; height: 8px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+  margin-top: -4px;
+  flex: none;
+  transition: transform .25s var(--ease);
+}
+.faq details[open] summary::after,
+.drawer[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.faq details p { padding: 0 16px 16px; color: var(--muted); max-width: 62ch; }
+
+@media (min-width: 900px) {
+  .intro-actions { grid-auto-flow: column; justify-content: start; }
+  .intro-actions .btn-primary { min-width: 240px; }
+  .wavefield { height: 320px; inset-block-start: -70px; }
+}
 
 /* ---------------------------------------------------------------- buttons */
 
@@ -216,57 +291,40 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: var(--r-control);
-  padding: 14px 20px;
+  padding: 12px 20px;
   min-height: 52px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background-color .18s var(--ease), border-color .18s var(--ease),
-              color .18s var(--ease), transform .08s var(--ease), opacity .18s;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease), opacity .18s;
 }
-.btn:active { transform: translateY(1px); }
+.btn:active:not(:disabled) { opacity: .85; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn[hidden] { display: none; }
 
-.btn-primary {
-  background: var(--signal);
-  color: var(--signal-ink);
-  width: 100%;
-  font-size: 17px;
-  box-shadow: 0 10px 26px -14px rgba(63, 224, 190, .75);
-}
-.btn-primary:hover:not(:disabled) { background: #58E9C9; }
+.btn-primary { background: var(--signal-fill); color: var(--on-signal); font-size: 17px; }
+.btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--signal-fill) 86%, white); }
+.btn-secondary { background: var(--panel-2); color: var(--text); border-color: var(--line); }
+.btn-secondary:hover:not(:disabled) { background: var(--panel-3); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+.btn-danger { background: var(--st-alert); color: var(--on-alert); }
+.btn-primary.btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--st-alert) 86%, white); }
 
-.btn-secondary {
-  background: var(--panel-2);
-  color: var(--text);
-  border-color: var(--line);
-}
-.btn-secondary:hover { background: var(--panel-3); }
+.stack { display: grid; gap: 10px; margin-top: 16px; }
+.stack .btn { width: 100%; }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-  border-color: var(--line);
-}
-.btn-ghost:hover { color: var(--text); border-color: var(--line-strong); }
-
-/* An <a> that has to look like the primary action. */
-.btn-link { text-decoration: none; }
-
-/* ------------------------------------------------------------ trust line */
-
-.trust {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.55;
-  margin-top: 14px;
-}
-.trust svg { flex: none; width: 17px; height: 17px; margin-top: 3px; color: var(--signal); }
-.trust b { color: var(--text); font-weight: 600; }
+/* The host's buttons: whatever starts or finishes the share is full width;
+   the two that act on a live share (switch, stop) sit side by side, with the
+   one that ends it quieter and marked as the way out. */
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.actions > .btn-primary, .actions > .file-pick, .actions > .toggle { grid-column: 1 / -1; }
+.actions .btn { width: 100%; }
+.btn-stop { color: var(--alert-text); border-color: color-mix(in srgb, var(--st-alert) 45%, var(--line)); }
+.btn-stop:hover:not(:disabled) { color: var(--alert-text); border-color: var(--st-alert); background: color-mix(in srgb, var(--st-alert) 8%, transparent); }
 
 /* --------------------------------------------------------------- panels */
 
@@ -278,133 +336,113 @@ a { color: var(--signal); text-decoration-thickness: 1px; text-underline-offset:
 }
 .panel + .panel { margin-top: 14px; }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--faint);
-  font-size: 12.5px;
-  margin: 26px 0 16px;
-}
-.divider::before, .divider::after {
-  content: '';
-  height: 1px;
-  flex: 1;
-  background: var(--line-soft);
-}
+.note { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.note-stacked { margin-top: 14px; }
 
 /* ---------------------------------------------------------------- inputs */
 
-.field-label {
+.field-label, .tool-label {
   display: block;
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--muted);
-  margin-bottom: 8px;
 }
+.field-label { margin-bottom: 8px; }
+.tool-label { white-space: nowrap; }
+.tool-hint { font-size: 13px; color: var(--faint); }
 
-input[type="text"],
-input[type="url"] {
+input[type="text"] {
   width: 100%;
   font: inherit;
-  /* 16px, not the body's 15: below 16 iOS zooms the whole page in the moment
-     the keyboard opens and never zooms back out — on the one field the guest
-     actually types into, holding the phone one-handed. */
+  /* 16px or more: below it iOS zooms the page in when the keyboard opens and
+     never zooms back out. */
   font-size: 16px;
-  padding: 13px 15px;
+  padding: 12px 14px;
   min-height: 52px;
   border-radius: var(--r-control);
   border: 1px solid var(--line);
-  background: var(--ink-2);
+  background: var(--field);
   color: var(--text);
-  transition: border-color .18s var(--ease), background-color .18s var(--ease);
+  caret-color: var(--signal);
+  transition: border-color .18s var(--ease);
 }
-input[type="text"]:focus,
-input[type="url"]:focus { border-color: var(--signal); background: var(--ink-3); }
-/* A field already lights its own border when it takes focus; the offset ring
-   on top of it read as two concentric aqua outlines. Sat against the border,
-   the two become one thicker edge. */
-input[type="text"]:focus-visible,
-input[type="url"]:focus-visible,
-.select:focus-visible { outline-offset: 0; }
-/* Placeholders are read, so they meet the same 4.5:1 floor as body text. */
+input[type="text"]:focus { border-color: var(--signal); }
+input[type="text"]:focus-visible, .select:focus-visible { outline-offset: 0; }
 input::placeholder { color: var(--faint); opacity: 1; }
 
-.row {
-  display: flex;
-  gap: 10px;
-}
+.row { display: flex; gap: 10px; }
 .row > input { flex: 1; min-width: 0; }
 .row > .btn { flex: none; }
 
-/* Room codes are read aloud and typed in — treat them as a plate, not prose.
-   Qualified with the element: `input[type="text"]` above outranks a bare class,
-   so the plate's weight and size were being handed straight back to body type. */
+/* Room codes are read aloud and typed in: a plate, not prose. */
 input[type="text"].code-input {
   direction: ltr;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: .22em;
   font-weight: 700;
-  font-size: 17px;
+}
+input[type="text"].code-input::placeholder { letter-spacing: 0; text-transform: none; }
+
+.field-error { display: none; color: var(--alert-text); font-size: 14px; margin-top: 10px; }
+.field-error.show { display: block; }
+
+.select {
+  font: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 8px 12px;
+  min-height: 48px;
+  cursor: pointer;
+  max-width: 100%;
 }
 
-/* A field that refused what you typed has to say so where you typed it. */
-.field-error {
-  display: none;
-  color: #FFC2C8;
-  font-size: 12.5px;
-  line-height: 1.6;
-  margin-top: 10px;
-}
-.field-error.show { display: block; animation: rise .28s var(--ease); }
-
-.note {
+.toggle, .choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
   color: var(--muted);
-  font-size: 13px;
   line-height: 1.6;
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 6px;
 }
-.note-strong { color: var(--text); font-weight: 600; }
-/* A note that follows a block it belongs to, rather than sitting inside one. */
-.note-stacked { margin-top: 14px; }
-.below .note-stacked { margin-top: 20px; }
-
-.footer-note {
-  margin-top: auto;
-  padding-top: 34px;
-  color: var(--faint);
-  font-size: 12px;
-  text-align: center;
-  line-height: 1.7;
+.toggle input, .choice input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--signal-fill);
+  cursor: pointer;
 }
+.choice b { color: var(--text); font-weight: 700; margin-inline-end: 4px; }
 
-/* ============================================================ room page */
+/* -------------------------------------------------------------- room header */
 
 .room-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
+.head-end { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
-/* The code is the thing people read out over the phone — give it the weight
-   of a ticket stub rather than burying it in a sentence. */
 .code-plate {
   display: flex;
   align-items: center;
   gap: 10px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  /* The copy button carries the end padding itself. */
-  padding: 6px;
+  border-radius: var(--r-control);
+  padding: 4px;
   padding-inline-start: 14px;
 }
-/* Once there is nothing left to copy, it has to carry its own. */
 .code-plate.is-bare { padding: 8px 14px; }
-/* Two words that mean nothing broken apart: left to wrap, "کد اتاق" stacked
-   into a column and dragged the whole header a line taller. */
-.code-plate .label { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
+.code-plate .label { font-size: 13px; color: var(--faint); white-space: nowrap; }
 .room-code {
   direction: ltr;
   font-size: 19px;
@@ -412,11 +450,28 @@ input[type="text"].code-input {
   letter-spacing: .16em;
   line-height: 1;
 }
-/* The code plate and the way out, kept together at the header's far end. */
-.head-end { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+.icon-btn {
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: var(--r-control);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: color .18s var(--ease), background-color .18s var(--ease), border-color .18s;
+}
+.icon-btn:hover { color: var(--text); background: var(--panel-3); }
+.icon-btn.done { color: var(--signal); border-color: var(--signal); }
+.icon-btn svg { width: 20px; height: 20px; }
+
 .leave-btn {
   font: inherit;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
@@ -424,16 +479,15 @@ input[type="text"].code-input {
   gap: 6px;
   min-height: 44px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--r-control);
   background: transparent;
   border: 1px solid var(--line);
   color: var(--muted);
   flex: none;
   transition: color .18s var(--ease), border-color .18s var(--ease);
 }
-.leave-btn svg { width: 18px; height: 18px; }
+.leave-btn svg { width: 20px; height: 20px; }
 .leave-btn:hover { color: var(--text); border-color: var(--line-strong); }
-.leave-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
 .leave-dialog {
   width: min(400px, calc(100vw - 32px));
@@ -442,239 +496,74 @@ input[type="text"].code-input {
   border-radius: var(--r-panel);
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .9);
 }
-.leave-dialog::backdrop { background: rgba(7, 9, 16, .72); backdrop-filter: blur(4px); }
-.leave-dialog[open] { animation: rise .22s var(--ease); }
-.leave-dialog-title { margin: 0 0 6px; font-size: 19px; font-weight: 800; }
-.leave-dialog-sub { margin: 0 0 20px; color: var(--muted); font-size: 14.5px; }
+.leave-dialog::backdrop { background: var(--scrim); }
+.leave-dialog-title { margin-bottom: 6px; font-size: 19px; font-weight: 800; }
+.leave-dialog-sub { margin-bottom: 20px; color: var(--muted); }
 .leave-dialog-actions { display: grid; gap: 10px; }
-.btn-danger {
-  background: var(--st-alert);
-  color: #1A0508;
-  box-shadow: 0 10px 26px -14px rgba(255, 124, 136, .7);
-}
-.btn-primary.btn-danger:hover:not(:disabled) { background: #FF95A0; }
 
-.icon-btn {
-  font: inherit;
-  cursor: pointer;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--muted);
-  border-radius: 10px;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  flex: none;
-  transition: color .18s var(--ease), background-color .18s var(--ease), border-color .18s;
-}
-.icon-btn:hover { color: var(--text); }
-.icon-btn.done { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 40%, transparent); }
-.icon-btn svg { width: 18px; height: 18px; }
+/* ----------------------------------------------------------- status and messages */
 
-.share-row { margin-bottom: 14px; display: flex; gap: 10px; }
-.share-row #shareBtn { flex: 1; }
-.share-row #qrBtn { flex: none; }
+.status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 
-/* ------------------------------------------------------------------- QR */
-
-/* The host is on a desktop and the guest is holding a camera, so the code is
-   shown at a size a phone can actually lock onto from across a room. */
-.qr-panel {
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--panel);
   border: 1px solid var(--line-soft);
-  border-radius: var(--r-panel);
-  padding: 18px;
-  margin-bottom: 14px;
-  text-align: center;
-  animation: rise .3s var(--ease);
-}
-.qr-panel[hidden] { display: none; }
-.qr-code {
-  width: min(232px, 62vw);
-  margin: 0 auto 12px;
-  /* The code's own light colour, in both themes: the quiet zone is part of
-     the symbol, and a dark frame around it reads to a scanner as more code. */
-  background: #E9ECF5;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.qr-code svg { display: block; width: 100%; height: auto; }
-
-/* ------------------------------------------------------- host tool shelf */
-
-/* Controls that belong to the room rather than to the moment: quality, the
-   door, and who is behind it. Quiet by default — they sit under the action. */
-.tools {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-  display: grid;
-  gap: 12px;
-}
-.tool-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-/* The name field shares this row with its label and must not push it out. */
-.tool-row input[type="text"] { flex: 1; min-width: 0; max-width: 60%; }
-/* A two-word label opposite a control is a label, not a paragraph: broken over
-   two lines it stops reading as one. */
-.tool-label { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
-.tool-hint { font-size: 12px; color: var(--faint); margin-top: -6px; }
-
-.select {
-  font: inherit;
-  /* Same 16px floor as the text fields, and the same reason: a select under it
-     zooms iOS in on tap. The room page's 46px touch floor applies here too. */
-  font-size: 16px;
-  color: var(--text);
-  background: var(--ink-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  padding: 9px 12px;
-  min-height: 46px;
-  cursor: pointer;
-  max-width: 100%;
-}
-
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.5;
-  cursor: pointer;
-  min-height: 44px;
-}
-.toggle input {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  accent-color: var(--signal);
-  cursor: pointer;
-}
-
-/* --------------------------------------------------------------- members */
-
-.members { margin-top: 2px; }
-.member-list {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 2px;
-}
-.member-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-top: 1px solid var(--line-soft);
-  font-size: 13.5px;
-}
-.member-name { flex: 1; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.member-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* When nobody typed a name, arrival order is the only thing telling two
-   guests apart — so it is always on the row, not a tooltip. */
-.member-when { font-size: 11.5px; color: var(--faint); flex: none; }
-.member-tag {
-  font-size: 11px;
-  color: var(--st-wait);
-  border: 1px solid color-mix(in srgb, var(--st-wait) 35%, transparent);
-  border-radius: 999px;
-  padding: 0 7px;
-}
-.link-btn {
-  font: inherit;
-  font-size: 12.5px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  color: var(--muted);
-  padding: 9px 12px;
-  min-height: 44px;
-  transition: color .18s var(--ease), border-color .18s var(--ease);
-}
-.link-btn:hover { color: var(--text); border-color: var(--line-strong); }
-.link-btn.danger:hover { color: var(--st-alert); border-color: color-mix(in srgb, var(--st-alert) 40%, transparent); }
-
-/* ------------------------------------------------------------- reactions */
-
-.reaction {
-  font: inherit;
+  border-radius: 8px;
+  padding: 5px 12px;
   font-size: 14px;
-  cursor: pointer;
+  color: var(--muted);
+}
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--st-idle); flex: none; }
+/* The dot marks a real state and never moves: wording carries it too. */
+.pill.live { color: var(--text); }
+.pill.live .dot { background: var(--st-live); }
+.pill.warn { color: var(--text); }
+.pill.warn .dot { background: var(--st-wait); }
+.pill.bad { color: var(--text); border-color: color-mix(in srgb, var(--st-alert) 45%, transparent); }
+.pill.bad .dot { background: var(--st-alert); }
+
+.notice {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--muted);
-  padding: 10px 15px;
-  min-height: 48px;
-  min-width: 48px;
-  transition: color .18s var(--ease), border-color .18s var(--ease), transform .12s var(--ease);
+  padding: 12px 15px;
+  border-radius: var(--r-control);
+  font-size: 14.5px;
+  line-height: 1.7;
+  margin-bottom: 14px;
 }
-.reaction:hover { color: var(--text); }
-.reaction:active { transform: translateY(1px); }
-.reaction.sent { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 45%, transparent); }
-/* A tap that arrived inside the cooldown. Without this the button simply did
-   nothing and read as broken. */
-.reaction.cooling { opacity: .45; }
-
-/* ---------------------------------------------------------------- toasts */
-
-/* A cheer needs no reply, so it behaves like applause: it rises over the
-   stage and is gone. Nothing to dismiss, nothing to read twice. */
-.burst {
-  position: absolute;
-  inset-inline: 0;
-  /* Just under the meter: cheers rise over the sound itself, and never under
-     the host's fields further down the stage. */
-  top: 112px;
-  height: 0;
-  pointer-events: none;
-  text-align: center;
-  z-index: 5;
+.notice.show { display: flex; }
+.notice-text { flex: 1; }
+.notice-alert {
+  background: color-mix(in srgb, var(--st-alert) 10%, var(--panel));
+  border-color: color-mix(in srgb, var(--st-alert) 45%, transparent);
+  color: var(--alert-text);
 }
-.burst-item {
-  position: absolute;
-  inset-inline-start: 50%;
-  bottom: 0;
-  display: grid;
-  justify-items: center;
-  gap: 2px;
+.notice-close {
+  font: inherit;
+  font-size: 20px;
   line-height: 1;
-  animation: cheer 2.4s var(--ease) forwards;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: .7;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-control);
+  margin: -12px -12px -12px -8px;
 }
-.burst-emoji { font-size: 30px; }
-.burst-tag {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text);
-  background: color-mix(in srgb, var(--ink) 80%, transparent);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
-@keyframes cheer {
-  0% { opacity: 0; transform: translate(-50%, 0) scale(.6); }
-  18% { opacity: 1; transform: translate(calc(-50% + var(--x, 0px) * .35), -22px) scale(1.15); }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--x, 0px)), -108px) scale(.9); }
-}
+.notice-close:hover { opacity: 1; }
 
-/* Everything else is a report the host has to act on, so it says who, what,
-   and — only on the host's screen — what to do about it. */
-/* Fixed to the viewport, not parked in the page. In the flow these sat above
-   the cards, so a host who had scrolled down to the guest list — exactly the
-   host who needs to hear "I can't hear anything" — got the message delivered
-   off-screen and expired before they scrolled back. */
+/* Fixed to the viewport: in the flow, these were delivered off-screen to any
+   host who had scrolled. */
 .toasts {
   position: fixed;
   z-index: 40;
@@ -693,358 +582,66 @@ input[type="text"].code-input {
   gap: 10px;
   width: 100%;
   max-width: 420px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-inline-start: 2px solid var(--signal);
-  border-radius: 12px;
+  background: var(--panel-3);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
   padding: 11px 14px;
-  font-size: 13.5px;
-  line-height: 1.55;
-  /* The only shadow besides the primary button's: this one floats above the
-     page and has to read as a layer, not as another panel. */
-  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .9);
-  animation: toast-in .3s var(--ease);
-  transition: opacity .4s var(--ease), transform .4s var(--ease);
-}
-@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } }
-.toast-emoji { font-size: 17px; line-height: 1.35; flex: none; }
-.toast-body { min-width: 0; }
-.toast-body b { color: var(--text); font-weight: 700; }
-.toast-todo {
-  display: block;
-  margin-top: 3px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.toast-alert {
-  border-inline-start-color: var(--st-alert);
-  background: color-mix(in srgb, var(--st-alert) 7%, transparent);
-}
-.toast-alert .toast-body b { color: #FFC2C8; }
-.toast.leaving { opacity: 0; transform: translateY(8px); }
-
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 999px;
-  padding: 6px 13px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.pill .dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--st-idle);
-  flex: none;
-  transition: background-color .3s var(--ease);
-}
-.pill.live { color: var(--text); border-color: color-mix(in srgb, var(--signal) 28%, transparent); }
-.pill.live .dot {
-  background: var(--st-live);
-  animation: beat 2.4s ease-in-out infinite;
-}
-/* Connection quality reads as a third state, not as an error: same chip, a
-   different lamp. Colour and wording always move together. */
-.pill.warn { color: var(--text); border-color: color-mix(in srgb, var(--st-wait) 30%, transparent); }
-.pill.warn .dot { background: var(--st-wait); }
-.pill.bad { color: var(--text); border-color: color-mix(in srgb, var(--st-alert) 32%, transparent); }
-.pill.bad .dot { background: var(--st-alert); }
-@keyframes beat {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(63,224,190,.5); }
-  60% { box-shadow: 0 0 0 6px rgba(63,224,190,0); }
-}
-
-/* ------------------------------------------------------------ the stage */
-
-/* Every connection state changes colour, glyph and motion together — the
-   text alone was never enough to tell "waiting" from "reconnecting". */
-.stage {
-  --st: var(--st-idle);
-  position: relative;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-panel);
-  background:
-    radial-gradient(130% 90% at 50% 0%, color-mix(in srgb, var(--st) 9%, transparent), transparent 62%),
-    var(--panel);
-  padding: 24px 20px 20px;
-  text-align: center;
-  transition: border-color .4s var(--ease), background .4s var(--ease);
-}
-.stage[data-state="waiting"] { --st: var(--st-wait); }
-.stage[data-state="connecting"] { --st: var(--st-connect); }
-.stage[data-state="live"] { --st: var(--st-live); border-color: color-mix(in srgb, var(--signal) 30%, transparent); }
-.stage[data-state="stopped"] { --st: var(--st-idle); }
-.stage[data-state="dropped"], .stage[data-state="error"] { --st: var(--st-alert); }
-
-.stage-glyph {
-  height: 76px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 16px;
-}
-.stage-glyph > * { grid-area: 1 / 1; }
-
-/* Each glyph fades in only for the states it belongs to. */
-.glyph { opacity: 0; transform: scale(.94); transition: opacity .32s var(--ease), transform .32s var(--ease); }
-.stage[data-state="waiting"] .glyph-wait,
-.stage[data-state="connecting"] .glyph-connect,
-.stage[data-state="stopped"] .glyph-flat,
-.stage[data-state="dropped"] .glyph-flat,
-.stage[data-state="error"] .glyph-alert,
-.stage[data-state="idle"] .glyph-idle { opacity: 1; transform: none; }
-
-/* waiting — a dashed ring turning slowly, nothing arriving yet */
-.glyph-wait {
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  border: 2px dashed color-mix(in srgb, var(--st) 55%, transparent);
-  animation: turn 14s linear infinite;
-}
-.glyph-wait::after {
-  content: '';
-  position: absolute;
-  inset: 21px;
-  border-radius: 50%;
-  background: var(--st);
-  opacity: .8;
-  animation: breathe 2.6s ease-in-out infinite;
-}
-@keyframes turn { to { transform: rotate(360deg); } }
-@keyframes breathe { 0%,100% { transform: scale(.62); opacity: .45; } 50% { transform: scale(1); opacity: .95; } }
-
-/* connecting — one arc closing the circle */
-.glyph-connect {
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--st) 22%, transparent);
-  border-top-color: var(--st);
-  animation: turn 1s linear infinite;
-}
-
-/* stopped / dropped — the wave gone flat, with a probe still sweeping it */
-.glyph-flat {
-  width: 108px; height: 2px;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--st) 60%, transparent);
-  position: relative;
-  direction: ltr;
-}
-.glyph-flat::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: -3px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--st);
-  animation: sweep 3.2s var(--ease) infinite;
-}
-@keyframes sweep {
-  0% { transform: translateX(0); opacity: 0; }
-  15%, 85% { opacity: 1; }
-  100% { transform: translateX(100px); opacity: 0; }
-}
-
-/* error — a stopped signal, not a generic warning triangle */
-.glyph-alert {
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--st) 45%, transparent);
-  display: grid;
-  place-items: center;
-  color: var(--st);
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/* idle host — the mark at rest, waiting for a source */
-.glyph-idle { color: var(--st-idle); }
-.glyph-idle svg { width: 74px; height: 74px; display: block; }
-
-.stage-title {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  margin-bottom: 4px;
-  text-wrap: balance;
-}
-.stage-sub {
-  color: var(--muted);
-  font-size: 13.5px;
-  min-height: 21px;
-  text-wrap: balance;
-}
-
-/* --------------------------------------------------------- level meter */
-
-/* Read straight off the audio's own spectrum, so a flat meter means no sound
-   is arriving — the one thing a "connected" label can never tell you. */
-.livebox { margin-top: 16px; }
-
-.meter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  height: 72px;
-  direction: ltr; /* the meter reads left-to-right whatever the page does */
-}
-/* Inside the stage the meter *is* the live-state glyph. */
-.stage-glyph .meter {
-  width: 100%;
-  height: 76px;
-  opacity: 0;
-  transition: opacity .32s var(--ease);
-}
-.stage[data-state="live"] .meter { opacity: 1; }
-.meter span {
-  flex: 1;
-  min-width: 2px;
-  max-width: 7px;
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(to top, var(--signal), var(--voice-2));
-  transform: scaleY(0.04);
-  transform-origin: center; /* mirrored around the centre line */
-  will-change: transform;
-}
-.meter.idle span {
-  background: var(--panel-2);
-  transform: scaleY(0.04);
-}
-/* Fed from the phone app a few times a second rather than every frame: the
-   bars glide between reports instead of jumping. */
-.meter.fed span { transition: transform .2s ease-out; }
-
-.live-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
-}
-.elapsed {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  /* "۰:۰۶" is a clock reading, not prose: without isolating it the RTL
-     paragraph reorders the parts around the colon into ۰۶:۰. */
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-.live-hint { font-size: 12px; color: var(--muted); text-align: start; }
-
-.now-playing {
-  background: var(--ink-2);
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
-  padding: 12px 15px;
-  margin-top: 16px;
   font-size: 14.5px;
-  font-weight: 600;
-  word-break: break-word;
-  text-align: start;
-}
-/* The host's version of the same block is a labelled field, not a read-out. */
-.now-playing--field { padding: 14px 15px; }
-.now-playing .np-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--faint);
-  margin-bottom: 3px;
-}
-
-/* -------------------------------------------------------------- volume */
-
-.volume-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 18px;
-}
-/* Nothing to turn down until something is playing. Written as "hide when not
-   live" on purpose: a browser without :has() keeps the control rather than
-   losing it. */
-#guestCard:has(.stage:not([data-state="live"])) .volume-row { display: none; }
-.volume-row input[type="range"] {
-  flex: 1;
-  min-width: 0;
-  height: 34px;
-  accent-color: var(--signal);
-  background: transparent;
-  cursor: pointer;
-}
-.mute-btn { width: 48px; height: 48px; border-radius: 12px; color: var(--text); }
-.mute-btn svg { width: 22px; height: 22px; }
-.mute-btn .wave-off { display: none; }
-.mute-btn[aria-pressed="true"] {
-  color: var(--st-alert);
-  border-color: color-mix(in srgb, var(--st-alert) 35%, transparent);
-  background: color-mix(in srgb, var(--st-alert) 10%, transparent);
-}
-.mute-btn[aria-pressed="true"] .wave-on { display: none; }
-.mute-btn[aria-pressed="true"] .wave-off { display: inline; }
-
-/* ------------------------------------------------------------- banners */
-
-.notice {
-  display: none;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(140, 124, 255, .1);
-  border: 1px solid rgba(140, 124, 255, .32);
-  color: var(--text);
-  padding: 12px 15px;
-  border-radius: 12px;
-  font-size: 13.5px;
   line-height: 1.6;
-  margin-bottom: 14px;
+  animation: toast-in .25s var(--ease);
+  transition: opacity .4s var(--ease);
 }
-.notice.show { display: flex; animation: rise .32s var(--ease); }
-.notice-text { flex: 1; }
-/* Something that went wrong looks different from something that just changed. */
-.notice-alert {
-  background: color-mix(in srgb, var(--st-alert) 10%, transparent);
-  border-color: color-mix(in srgb, var(--st-alert) 30%, transparent);
-  color: #FFC2C8;
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+.toast-emoji { font-size: 18px; line-height: 1.4; flex: none; }
+.toast-body { min-width: 0; }
+.toast-body b { font-weight: 700; }
+.toast-todo { display: block; margin-top: 3px; font-size: 13.5px; color: var(--muted); }
+/* The one colour here marks something the host has to fix. */
+.toast-alert { border-color: var(--st-alert); }
+.toast.leaving { opacity: 0; }
+
+/* A cheer needs no reply: it rises over the stage and is gone. */
+.burst {
+  position: absolute;
+  inset-inline: 0;
+  top: 112px;
+  height: 0;
+  pointer-events: none;
+  text-align: center;
+  z-index: 5;
 }
-.notice-close {
-  font: inherit;
-  font-size: 18px;
+.burst-item {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   line-height: 1;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  opacity: .65;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  margin: -12px -12px -12px -8px;
+  animation: cheer 2.4s var(--ease) forwards;
 }
-.notice-close:hover { opacity: 1; }
-@keyframes rise { from { opacity: 0; transform: translateY(-6px); } }
+.burst-emoji { font-size: 30px; }
+.burst-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+@keyframes cheer {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(.6); }
+  18% { opacity: 1; transform: translate(calc(-50% + var(--x, 0px) * .35), -22px) scale(1.15); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x, 0px)), -108px) scale(.9); }
+}
 
 .enable-audio-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(7, 9, 16, .93);
-  backdrop-filter: blur(6px);
+  background: var(--scrim);
   display: grid;
   place-items: center;
   z-index: 50;
@@ -1052,77 +649,396 @@ input[type="text"].code-input {
   text-align: center;
 }
 .enable-audio-overlay.hidden { display: none; }
-.enable-audio-overlay .inner { max-width: 320px; }
-.enable-audio-overlay p { color: var(--muted); margin: 16px 0 22px; }
+.enable-audio-overlay .inner { width: 100%; max-width: 320px; }
+.enable-audio-overlay p { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
 .enable-audio-overlay .btn { width: 100%; }
 
-/* --------------------------------------------------------- host detail */
+/* ------------------------------------------------------------ the stage */
 
-.host-brief {
-  text-align: start;
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.65;
-  margin: 20px 0 4px;
+/* Every connection state changes glyph, colour and wording together; the text
+   alone never told "waiting" from "reconnecting". */
+.stage { --st: var(--st-idle); position: relative; text-align: center; }
+.stage[data-state="waiting"] { --st: var(--st-wait); }
+.stage[data-state="connecting"] { --st: var(--violet); }
+.stage[data-state="live"] { --st: var(--st-live); }
+.stage[data-state="stopped"] { --st: var(--st-idle); }
+.stage[data-state="dropped"], .stage[data-state="error"] { --st: var(--st-alert); }
+
+.stage-glyph { height: 76px; display: grid; place-items: center; margin-bottom: 14px; }
+.stage-glyph > * { grid-area: 1 / 1; }
+
+.glyph { opacity: 0; transition: opacity .3s var(--ease); }
+.stage[data-state="waiting"] .glyph-wait,
+.stage[data-state="connecting"] .glyph-connect,
+.stage[data-state="stopped"] .glyph-flat,
+.stage[data-state="dropped"] .glyph-flat,
+.stage[data-state="error"] .glyph-alert,
+.stage[data-state="idle"] .glyph-idle { opacity: 1; }
+
+/* waiting: a dashed ring, nothing arriving yet. It sits still; the sentence
+   below says what it is waiting for. */
+.glyph-wait {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px dashed var(--st);
+  position: relative;
 }
-kbd {
-  font: inherit;
-  font-size: .93em;
+.glyph-wait::after {
+  content: '';
+  position: absolute;
+  inset: 19px;
+  border-radius: 50%;
+  background: var(--st);
+}
+
+/* connecting: one arc going round. Motion here means "working". */
+.glyph-connect {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--st) 25%, transparent);
+  border-top-color: var(--st);
+  animation: turn 1s linear infinite;
+}
+@keyframes turn { to { transform: rotate(360deg); } }
+
+/* stopped or dropped: the wave gone flat */
+.glyph-flat { width: 108px; height: 3px; border-radius: 2px; background: var(--st); }
+
+.glyph-alert {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--st);
+  display: grid;
+  place-items: center;
+  color: var(--st);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.glyph-idle { color: var(--st-idle); }
+.glyph-idle svg, .glyph-live svg { width: 72px; height: 72px; display: block; }
+
+/* Where the browser will not let us read the level, the mark stands in for
+   the meter rather than a flat row of bars that would say "no sound". */
+.stage[data-state="live"][data-meter="off"] .glyph-live { opacity: 1; }
+.stage[data-meter="off"] .meter { display: none; }
+
+.stage-words { display: grid; gap: 4px; }
+.stage-title { font-size: 19px; font-weight: 700; letter-spacing: -0.015em; text-wrap: balance; }
+.stage[data-state="live"] .stage-title { color: var(--signal); }
+.stage[data-state="dropped"] .stage-title,
+.stage[data-state="error"] .stage-title { color: var(--alert-text); }
+.stage-sub { color: var(--muted); font-size: 15px; min-height: 24px; text-wrap: balance; }
+
+/* Read straight off the audio's own spectrum, so a flat meter means no sound
+   is arriving, which a "connected" label can never tell you. */
+.meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 72px;
+  direction: ltr;
+}
+.stage-glyph .meter { width: 100%; height: 76px; opacity: 0; transition: opacity .3s var(--ease); }
+.stage[data-state="live"] .meter { opacity: 1; }
+.meter span {
+  flex: 1;
+  min-width: 2px;
+  max-width: 7px;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(to top, var(--wave-1), var(--wave-2));
+  transform: scaleY(0.04);
+  will-change: transform;
+}
+.meter.idle span { background: var(--line-strong); }
+.meter.fed span { transition: transform .2s ease-out; }
+
+.livebox { margin-top: 14px; }
+.live-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 14px; margin-top: 12px; }
+.elapsed {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  /* "۰:۰۶" is a clock, not prose; isolated, the RTL paragraph can't reorder
+     the parts around the colon. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.live-hint { flex-basis: 100%; font-size: 13px; color: var(--muted); text-align: center; }
+.path-label { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; }
+.path-label:empty { display: none; }
+
+.file-controls { align-items: center; gap: 12px; margin-top: 14px; }
+.file-controls .btn { min-height: 44px; padding: 8px 16px; }
+.file-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* -------------------------------------------------------------- the host */
+
+.host-layout { display: grid; gap: 14px; }
+.host-main, .host-side > .panel { min-width: 0; }
+.host-side { display: grid; gap: 14px; align-content: start; }
+.host-side > .panel + .panel { margin-top: 0; }
+
+.field { display: grid; gap: 8px; }
+.field + .field { margin-top: 16px; }
+.field .tool-hint { margin-top: 0; }
+
+.share-row { margin-top: 16px; display: flex; gap: 10px; }
+.share-row #shareBtn { flex: 1; font-size: 16px; min-height: 48px; }
+.share-row #qrBtn { min-height: 48px; }
+.share-row #qrBtn { flex: none; }
+
+/* Shown at a size a phone camera can lock onto from across a room. */
+.qr-panel { margin-top: 14px; text-align: center; }
+.qr-panel[hidden] { display: none; }
+.qr-code {
+  width: min(232px, 62vw);
+  margin: 0 auto 12px;
+  /* The code's own light colour in both schemes: the quiet zone is part of the
+     symbol, and a dark frame reads to a scanner as more code. */
+  background: var(--qr-bg);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+.qr-code svg { display: block; width: 100%; height: auto; }
+
+.rehearsal { margin-top: 18px; }
+.rehearsal[open] { display: grid; gap: 12px; }
+.rehearsal > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--muted);
+}
+.rehearsal > summary::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .25s var(--ease);
+}
+.rehearsal[open] > summary::before { transform: rotate(-135deg); }
+.rehearsal > summary:hover { color: var(--text); }
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 12px;
+  color: var(--muted);
+}
+.steps li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.steps li::before {
+  content: counter(step, persian);
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 1px 7px;
-  direction: ltr;
-  display: inline-block;
+  color: var(--signal);
+  font-size: 14px;
+  font-weight: 700;
+}
+.steps b { color: var(--text); font-weight: 600; }
+.how .steps li > span { display: block; }
+
+.file-pick { display: flex; width: 100%; position: relative; }
+.file-pick:focus-within { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+/* A settings shelf that stays shut until wanted. */
+.drawer { padding: 0; }
+.drawer > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 20px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: var(--r-panel);
+}
+.drawer > summary:hover { color: var(--text); }
+.drawer > .tools { padding: 4px 20px 20px; display: grid; gap: 12px; }
+.tool-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tool-row input[type="text"] { flex: 1; min-width: 0; max-width: 60%; }
+.mode-choice { display: grid; gap: 4px; }
+.mode-choice legend { padding: 0; margin-bottom: 4px; }
+
+.members { margin-top: 18px; }
+.member-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+.member-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+.member-name { flex: 1 1 140px; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.member-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-when { font-size: 13px; color: var(--faint); flex: none; }
+.member-tag { font-size: 12px; color: var(--st-wait); border: 1px solid currentColor; border-radius: 6px; padding: 0 7px; }
+.link-btn {
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  color: var(--muted);
+  padding: 8px 12px;
+  min-height: 44px;
+  transition: color .18s var(--ease), border-color .18s var(--ease);
+}
+.link-btn:hover { color: var(--text); border-color: var(--line-strong); }
+.link-btn.danger:hover { color: var(--alert-text); border-color: var(--st-alert); }
+
+/* ------------------------------------------------------------- the guest */
+
+.room-shell.is-guest .room-head { margin-bottom: 22px; }
+.room-shell.is-guest .code-plate { background: transparent; }
+.room-shell.is-guest .room-code { font-size: 15px; color: var(--muted); letter-spacing: .14em; }
+
+.guest-hero { margin-bottom: 16px; display: grid; gap: 12px; }
+.guest-who {
+  font-size: clamp(25px, 7vw, 32px);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.now-playing {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-control);
+  padding: 12px 15px;
+  font-weight: 600;
+  word-break: break-word;
+}
+#guestNowPlaying { display: flex; align-items: center; gap: 10px; }
+.np-optional { color: var(--faint); font-weight: 400; }
+.np-note { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--signal); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.np-title { min-width: 0; }
+
+.guest-main { display: grid; gap: 16px; }
+.guest-main.panel + .panel { margin-top: 14px; }
+
+.listen-gate { display: grid; gap: 12px; }
+.listen-gate .note { text-align: center; }
+
+.volume-row { display: flex; align-items: center; gap: 12px; }
+/* Nothing to turn down until something is playing. */
+#guestCard:has(.stage:not([data-state="live"])) .volume-row { display: none; }
+.volume-row input[type="range"] { flex: 1; min-width: 0; height: 36px; accent-color: var(--signal-fill); background: transparent; cursor: pointer; }
+.mute-btn { width: 48px; height: 48px; color: var(--text); }
+.mute-btn svg { width: 22px; height: 22px; }
+.mute-btn .wave-off { display: none; }
+.mute-btn[aria-pressed="true"] {
+  color: var(--alert-text);
+  border-color: var(--st-alert);
+}
+.mute-btn[aria-pressed="true"] .wave-on { display: none; }
+.mute-btn[aria-pressed="true"] .wave-off { display: inline; }
+
+/* The listener's whole voice: cheers a thumb can reach, one question, and the
+   things that can go wrong behind one button. */
+.react-bar { display: grid; gap: 10px; }
+.cheers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.reaction {
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  color: var(--text);
+  padding: 8px 14px;
+  min-height: 48px;
+  min-width: 48px;
+  transition: border-color .18s var(--ease), background-color .18s var(--ease), opacity .18s;
+}
+.reaction:hover:not(:disabled) { background: var(--panel-3); border-color: var(--line-strong); }
+.reaction.sent { border-color: var(--signal); animation: pop .4s var(--ease); }
+.reaction.cooling { opacity: .5; }
+.reaction:disabled { opacity: .4; cursor: not-allowed; }
+@keyframes pop { 40% { transform: scale(1.12); } }
+.reaction.cheer { font-size: 26px; min-height: 56px; padding: 0; border-radius: var(--r-panel); display: grid; place-items: center; }
+.asks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.problem-toggle[aria-expanded="true"] { border-color: var(--st-alert); }
+.problems {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line);
+  background: var(--field);
+}
+.problems[hidden] { display: none; }
+.problems-title { font-size: 14px; color: var(--muted); }
+.reaction.problem { text-align: start; padding-inline: 16px; }
+/* After the share ends there is nothing left to react to. */
+#guestCard:has(.stage[data-state="stopped"]) .react-bar { display: none; }
+
+/* On a phone, while live, the bar rides at the bottom where a thumb already is. */
+@media (pointer: coarse) {
+  #guestCard:has(.stage[data-state="live"]) .react-bar:not(:has(.problems:not([hidden]))) {
+    position: sticky;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    z-index: 30;
+    padding: 10px;
+    margin-inline: -10px;
+    border-radius: var(--r-panel);
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
 }
 
-.stack { display: grid; gap: 10px; margin-top: 14px; }
-.stack .btn { width: 100%; }
+.end-card { text-align: center; display: grid; gap: 10px; justify-items: center; padding: 26px 20px 22px; }
+.end-duration { font-size: 14px; color: var(--signal); font-weight: 700; }
+.end-title { font-size: 21px; font-weight: 800; line-height: 1.5; text-wrap: balance; max-width: 26ch; }
+.end-sub { color: var(--muted); max-width: 36ch; }
+.end-card .stack { width: 100%; margin-top: 8px; }
 
 /* ------------------------------------------------------------ responsive */
 
 @media (min-width: 620px) {
-  .shell { padding: calc(28px + env(safe-area-inset-top, 0px)) 24px calc(48px + env(safe-area-inset-bottom, 0px)); }
-  .hero { padding-top: 48px; }
-  .meter { height: 84px; gap: 4px; }
-  .stage { padding: 30px 26px 24px; }
+  .shell { padding-inline: 24px; }
+  .stage-glyph .meter { height: 84px; }
 }
 
-@media (min-width: 900px) {
-  .hero { padding-top: 40px; }
-  /* One column, held to a readable measure and centred with everything below
-     it, rather than a wide headline floating over an empty half. */
-  .hero-grid { max-width: 620px; margin-inline: auto; text-align: center; }
-  .hero-lead { margin-inline: auto; }
-  .trust { text-align: start; max-width: 46ch; margin-inline: auto; }
-  .hero-title { font-size: 46px; }
-  .btn-primary { width: auto; min-width: 260px; }
-  .wavefield { height: 420px; inset: -80px -50vw auto; }
+@media (min-width: 960px) {
+  .room-shell.is-host { max-width: 1040px; }
+  .host-layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
 }
 
-/* Guests are overwhelmingly on a phone: nothing under 46px, no zooming. On the
-   room page the wordmark gives way to the mark alone — the code plate is what
-   that header is actually for, and the two together no longer fit. The landing
-   page keeps its wordmark: there the header is the only place the name appears. */
+/* A phone: the wordmark gives way where the code plate and the way out need
+   the room, and the leave button keeps only its icon. */
 @media (max-width: 420px) {
-  .room-head .brand-name { font-size: 15.5px; }
-  /* The host's header also carries the copy button: with the way out added,
-     the wordmark is what gives. A guest's header keeps it — there it is the
-     only place they learn what they opened. */
+  .room-head .brand-name { font-size: 16px; }
   .room-shell.is-host .room-head .brand-name { display: none; }
-  /* The door alone: its label stays for screen readers. */
   .leave-btn { padding: 0; width: 44px; justify-content: center; }
   .leave-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .room-head .brand svg { width: 28px; height: 28px; }
   .code-plate .label { display: none; }
 }
 @media (max-width: 380px) {
-  .brand-name { font-size: 16px; }
-  .room-code { font-size: 17px; letter-spacing: .12em; }
-  /* Below this the label and its control stop fitting on one line without
-     squeezing one of them; stacked, both keep their full width. */
+  .room-code { font-size: 16px; letter-spacing: .08em; }
+  .head-end { gap: 6px; }
+  .code-plate { gap: 6px; padding-inline-start: 10px; }
+  .shell { padding-inline: 14px; }
   .tool-row { flex-direction: column; align-items: stretch; gap: 6px; }
   .tool-row input[type="text"] { max-width: 100%; }
 }
@@ -1135,500 +1051,5 @@ kbd {
   }
 }
 
-/* =====================================================================
-   Reach: the guest's three acts, the host's two columns, and the
-   screen-off path. Same world — panels, hairlines, two voices.
-   ===================================================================== */
-
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* The parts the browser draws carry the palette too. */
-::selection { background: color-mix(in srgb, var(--signal) 32%, transparent); color: var(--text); }
-input[type="text"] { caret-color: var(--signal); }
-html { scrollbar-color: var(--line-strong) var(--ink); }
-
 /* The mark's second strand rides the level of what is playing (app.js). */
 .mark-voice { transition: transform .12s linear; transform-box: fill-box; }
-
-.stage-words { display: grid; gap: 4px; }
-.stage-words .stage-title { margin-bottom: 0; }
-
-/* -------------------------------------------------------------- the host */
-
-.host-layout { display: grid; gap: 14px; }
-.host-main, .host-side > .panel { min-width: 0; }
-.host-side { display: grid; gap: 14px; align-content: start; }
-.host-side .share-row { margin: 16px 0 0; }
-.host-side .qr-panel { margin: 14px 0 0; }
-.host-side .members { margin-top: 16px; }
-
-.field { display: grid; gap: 8px; }
-.field .tool-hint { margin-top: 0; }
-
-/* Rehearsing the one switch before the browser's picker covers the page.
-   Open the first time, a single line after that. */
-.rehearsal { margin-top: 18px; }
-.rehearsal[open] { display: grid; gap: 14px; }
-.rehearsal > summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.rehearsal > summary::-webkit-details-marker { display: none; }
-.rehearsal > summary::before {
-  content: "";
-  width: 7px; height: 7px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(-45deg);
-  transition: transform .25s var(--ease);
-}
-.rehearsal[open] > summary::before { transform: rotate(45deg); }
-.rehearsal > summary:hover { color: var(--text); }
-.steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-  display: grid;
-  gap: 10px;
-  font-size: 13.5px;
-  line-height: 1.7;
-  color: var(--muted);
-}
-.steps li {
-  counter-increment: step;
-  display: grid;
-  grid-template-columns: 26px 1fr;
-  gap: 10px;
-  align-items: start;
-}
-.steps li::before {
-  content: counter(step, persian);
-  width: 26px; height: 26px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--signal);
-  font-size: 12.5px;
-  font-weight: 700;
-}
-.steps b { color: var(--text); font-weight: 600; }
-
-/* A drawing of Chrome's own picker, in Chrome's own dark palette: close
-   enough to be recognised the moment the real one opens, and not a white
-   slab in a page that is dark everywhere else. Only the outline is ours. */
-.picker-sketch {
-  margin: 0;
-  direction: ltr;
-  text-align: left;
-  background: #292A2D;
-  color: #E8EAED;
-  border: 1px solid #3C4043;
-  border-radius: 12px;
-  padding: 12px;
-  display: grid;
-  gap: 8px;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 12px;
-}
-.ps-head { font-weight: 600; font-size: 12.5px; }
-.ps-tabs { display: flex; gap: 12px; color: #9AA0A6; border-bottom: 1px solid #3C4043; padding-bottom: 6px; }
-.ps-tabs .on { color: #8AB4F8; box-shadow: 0 2px 0 #8AB4F8; }
-.ps-row { background: #35363A; border: 1px solid #3C4043; border-radius: 7px; padding: 7px 9px; color: #BDC1C6; }
-.ps-row.on { border-color: #8AB4F8; background: #394457; color: #E8EAED; }
-.ps-audio {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: #35363A;
-  border-radius: 8px;
-  padding: 8px 10px;
-  outline: 3px solid var(--signal);
-  outline-offset: 2px;
-  margin-top: 12px;
-}
-.ps-switch { width: 32px; height: 18px; border-radius: 999px; background: #8AB4F8; position: relative; flex: none; }
-.ps-switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: #202124; }
-.ps-pin {
-  position: absolute;
-  top: -15px;
-  left: -6px;
-  direction: rtl;
-  font-family: 'Vazirmatn', system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  background: var(--signal);
-  color: var(--signal-ink);
-  border-radius: 999px;
-  padding: 1px 9px;
-}
-
-/* A <label> wrapping a file input, dressed as the button it acts as. */
-.file-pick { display: flex; width: 100%; position: relative; }
-.file-pick:focus-within { outline: 2px solid var(--signal); outline-offset: 3px; }
-
-.file-controls {
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
-}
-.file-controls .btn { min-height: 44px; padding: 10px 16px; }
-.file-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* A settings shelf that stays shut until wanted: the idle host sees at most
-   four decisions, not nine. */
-.drawer { padding: 0; }
-.drawer > summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-  padding: 0 20px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--muted);
-  border-radius: var(--r-panel);
-}
-.drawer > summary::-webkit-details-marker { display: none; }
-.drawer > summary::after {
-  content: "";
-  width: 8px; height: 8px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
-  margin-top: -4px;
-  transition: transform .25s var(--ease);
-}
-.drawer[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
-.drawer > summary:hover { color: var(--text); }
-.drawer > .tools { margin: 0; padding: 4px 20px 20px; border-top: 0; }
-
-@media (min-width: 960px) {
-  .room-shell.is-host { max-width: 1040px; }
-  .host-layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
-}
-
-/* ------------------------------------------------------------- the guest */
-
-.room-shell.is-guest .room-head { margin-bottom: 26px; }
-.room-shell.is-guest .code-plate { background: transparent; border-color: var(--line-soft); }
-.room-shell.is-guest .room-code { font-size: 14px; color: var(--muted); letter-spacing: .14em; }
-
-/* Act one: who is playing for you. The biggest words on the page. */
-.guest-hero { margin-bottom: 16px; display: grid; gap: 12px; }
-.guest-who {
-  font-size: clamp(24px, 6.6vw, 30px);
-  font-weight: 800;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-}
-.guest-hero .now-playing { margin-top: 0; }
-.now-playing .np-label { color: var(--signal); }
-.np-optional { color: var(--faint); font-weight: 500; }
-.np-field { margin-top: 18px; }
-.np-field .row > .btn { width: auto; min-height: 52px; }
-#guestNowPlaying { display: flex; align-items: center; gap: 10px; }
-.np-note {
-  flex: none;
-  width: 20px; height: 20px;
-  fill: none;
-  stroke: var(--signal);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.np-title { min-width: 0; }
-
-.guest-main { display: grid; gap: 16px; }
-.guest-main .volume-row,
-.guest-main .react-bar,
-.guest-main .note-stacked { margin-top: 0; }
-
-/* Where the browser will not let us read the level, the mark stands in for
-   the meter rather than a flat row of bars that would say "no sound". */
-.glyph-live svg { width: 74px; height: 74px; display: block; }
-.stage[data-state="live"][data-meter="off"] .glyph-live { opacity: 1; transform: none; }
-.stage[data-meter="off"] .meter { display: none; }
-
-/* The first tap, and the one real choice a guest makes. */
-.listen-gate { display: grid; gap: 14px; }
-.mode-choice { display: grid; gap: 10px; }
-.mode {
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  display: grid;
-  gap: 4px;
-  padding: 14px 16px;
-  min-height: 64px;
-  background: var(--ink-2);
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  transition: border-color .18s var(--ease), background-color .18s var(--ease), color .18s var(--ease);
-}
-.mode b { color: var(--text); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-.mode b::before {
-  content: "";
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line-strong);
-  flex: none;
-  transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
-}
-.mode span { font-size: 13px; line-height: 1.65; }
-.mode[aria-checked="true"] {
-  border-color: color-mix(in srgb, var(--signal) 55%, transparent);
-  background: color-mix(in srgb, var(--signal) 6%, var(--ink-2));
-}
-.mode[aria-checked="true"] b::before { border-color: var(--signal); box-shadow: inset 0 0 0 3px var(--ink-2), inset 0 0 0 8px var(--signal); }
-/* Violet is the relay: the sound comes back through a second voice, ours. */
-#modeRelay[aria-checked="true"] { border-color: color-mix(in srgb, var(--voice-2) 60%, transparent); background: color-mix(in srgb, var(--voice-2) 7%, var(--ink-2)); }
-#modeRelay[aria-checked="true"] b::before { border-color: var(--voice-2); box-shadow: inset 0 0 0 3px var(--ink-2), inset 0 0 0 8px var(--voice-2); }
-.mode:disabled { opacity: .45; cursor: not-allowed; }
-
-/* Which path the sound is on — and the switch to the other one. */
-.path-chip {
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 999px;
-  padding: 6px 12px;
-  min-height: 32px;
-  background: transparent;
-  color: var(--signal);
-  border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent);
-}
-.path-chip[data-path="relay"] { color: var(--voice-2); border-color: color-mix(in srgb, var(--voice-2) 40%, transparent); }
-.path-chip:not(:empty)::after { content: " · عوض کن"; color: var(--faint); }
-.path-chip:empty { display: none; }
-
-/* The listener's whole voice. Cheers are big, round and quick; the question
-   and the problem button are words; problems wait behind their button. */
-.react-bar { display: grid; gap: 10px; }
-.cheers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.reaction.cheer {
-  font-size: 24px;
-  min-height: 56px;
-  padding: 0;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-}
-.reaction.cheer:hover:not(:disabled) { border-color: var(--line-strong); background: var(--panel-3); }
-.asks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.reaction.ask {
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.reaction.ask svg { width: 18px; height: 18px; flex: none; }
-.problem-toggle[aria-expanded="true"] {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--st-alert) 40%, transparent);
-  background: color-mix(in srgb, var(--st-alert) 8%, var(--panel-2));
-}
-.problems {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--st-alert) 25%, transparent);
-  background: color-mix(in srgb, var(--st-alert) 5%, var(--ink-2));
-  animation: rise .25s var(--ease);
-}
-.problems[hidden] { display: none; }
-.problems-title { font-size: 12.5px; color: var(--muted); }
-.reaction.problem { border-radius: 12px; text-align: start; padding-inline: 16px; }
-.reaction:disabled { opacity: .35; cursor: not-allowed; }
-.reaction.sent { animation: pop .45s var(--ease); }
-@keyframes pop { 40% { transform: scale(1.18); } }
-/* After the share ends there is nothing left to react to. */
-#guestCard:has(.stage[data-state="stopped"]) .react-bar { display: none; }
-
-/* On a phone, while live, the bar rides at the bottom of the screen where a
-   thumb already is — a layer over the page, so it gets the toast's shadow. */
-@media (pointer: coarse) {
-  #guestCard:has(.stage[data-state="live"]) .react-bar:not(:has(.problems:not([hidden]))) {
-    position: sticky;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    z-index: 30;
-    padding: 10px;
-    margin-inline: -10px;
-    border-radius: 20px;
-    border: 1px solid var(--line);
-    background: var(--panel);
-    box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .9);
-  }
-}
-
-.drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.drawer-actions .btn { min-height: 48px; padding: 10px 12px; font-size: 14px; }
-
-/* Act three: the end of a listen, and what the guest keeps. */
-.end-card {
-  margin-top: 14px;
-  text-align: center;
-  display: grid;
-  gap: 10px;
-  justify-items: center;
-  padding: 26px 20px 22px;
-  animation: rise .4s var(--ease);
-}
-.end-mark { width: 52px; height: 52px; }
-.end-duration {
-  font-size: 13px;
-  color: var(--signal);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.end-title { font-size: 20px; font-weight: 800; line-height: 1.5; text-wrap: balance; max-width: 26ch; }
-.end-sub { color: var(--muted); font-size: 13.5px; max-width: 36ch; }
-.end-card .stack { width: 100%; margin-top: 8px; }
-
-/* ------------------------------------------------------------- car mode */
-
-.car-mode {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--ink);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 24px;
-  padding: max(24px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
-}
-.car-mode[hidden] { display: none; }
-.car-title { font-size: clamp(24px, 6vw, 40px); font-weight: 800; line-height: 1.35; }
-.car-state { font-size: clamp(16px, 3.6vw, 22px); font-weight: 700; margin-top: 8px; color: var(--st-wait); }
-.car-state[data-tone="live"] { color: var(--st-live); }
-.car-state[data-tone="connect"] { color: var(--st-connect); }
-.car-state[data-tone="alert"] { color: var(--st-alert); }
-.car-state[data-tone="idle"] { color: var(--st-idle); }
-.car-play {
-  width: clamp(96px, 28vw, 148px);
-  height: clamp(96px, 28vw, 148px);
-  border-radius: 50%;
-  border: 0;
-  cursor: pointer;
-  background: var(--signal);
-  color: var(--signal-ink);
-  display: grid;
-  place-items: center;
-}
-.car-play svg { width: 42%; height: 42%; fill: currentColor; }
-.car-play .car-resume { display: none; }
-.car-play[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 2px var(--line-strong); }
-.car-play[aria-pressed="true"] .car-pause { display: none; }
-.car-play[aria-pressed="true"] .car-resume { display: inline; }
-.car-exit {
-  position: absolute;
-  top: max(14px, env(safe-area-inset-top));
-  left: max(14px, env(safe-area-inset-left));
-  width: 52px; height: 52px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--muted);
-  font: inherit;
-  font-size: 24px;
-  cursor: pointer;
-}
-@media (max-width: 520px) and (orientation: portrait) {
-  .car-mode { grid-template-columns: 1fr; justify-items: center; text-align: center; align-content: center; }
-}
-
-/* ------------------------------------------------------------ landing */
-
-/* The Persian companion to the name: for search and for reading, not a
-   translation of it. */
-.brand-aside {
-  font-size: 13px;
-  color: var(--faint);
-  font-weight: 500;
-  padding-inline-start: 10px;
-  border-inline-start: 1px solid var(--line);
-  line-height: 1;
-}
-
-.btn-wide { width: 100%; margin-top: 10px; }
-
-.section-title {
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin: 40px 0 14px;
-}
-
-.how .steps { font-size: 14.5px; }
-.how .steps li > span { display: block; }
-
-.faq { display: grid; gap: 8px; }
-.faq .section-title { margin-bottom: 6px; }
-.faq details {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-control);
-  background: var(--panel);
-}
-.faq summary {
-  cursor: pointer;
-  list-style: none;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px;
-  font-weight: 600;
-  font-size: 14.5px;
-}
-.faq summary::-webkit-details-marker { display: none; }
-.faq summary::after {
-  content: "";
-  width: 7px; height: 7px;
-  border-right: 1.5px solid var(--muted);
-  border-bottom: 1.5px solid var(--muted);
-  transform: rotate(45deg);
-  margin-top: -4px;
-  flex: none;
-  transition: transform .25s var(--ease);
-}
-.faq details[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
-.faq details p {
-  padding: 0 16px 16px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.8;
-  max-width: 62ch;
-}
-
-@media (min-width: 900px) {
-  .btn-wide { width: auto; min-width: 260px; display: inline-flex; margin-inline-start: 10px; }
-  .hero-copy .btn-wide[hidden] { display: none; }
-}
-

@@ -1,4 +1,4 @@
-// Renders the brand's raster assets — link-preview images and icons — from the
+// Renders the brand's raster assets: link-preview images and icons: from the
 // same fonts, colours and mark the site itself uses, so they can never drift
 // from the CSS. Dev-only: the app ships the PNGs, not this script.
 //
@@ -35,7 +35,7 @@ const MARK = (size, stroke = 4.6) => `
     </g>
   </svg>`;
 
-// One period of the mark's wave, repeated — the same curve as logo.svg.
+// One period of the mark's wave, repeated: the same curve as logo.svg.
 const wavePath = (mid) => {
   let d = `M0 ${mid}`;
   for (let x = 0; x < 1600; x += 400) {
@@ -45,16 +45,14 @@ const wavePath = (mid) => {
   return d;
 };
 
-const ogPage = ({ eyebrow, title, sub }) => `<!doctype html>
+const ogPage = ({ title, sub }) => `<!doctype html>
 <html lang="fa" dir="rtl"><head><meta charset="utf-8">
 <link rel="stylesheet" href="${BASE}/style.css">
 <style>
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
   body {
-    background:
-      radial-gradient(90% 120% at 78% 0%, rgba(63,224,190,.14), transparent 55%),
-      radial-gradient(70% 100% at 8% 100%, rgba(140,124,255,.15), transparent 60%),
-      #070910;
+    background: #070910;
+    color: #E9ECF5;
     display: flex; flex-direction: column; justify-content: center;
     padding: 0 84px; position: relative;
   }
@@ -65,21 +63,14 @@ const ogPage = ({ eyebrow, title, sub }) => `<!doctype html>
   .lockup { position: absolute; top: 56px; right: 84px; direction: ltr;
     display: flex; align-items: center; gap: 16px; }
   .lockup .name { font-size: 40px; font-weight: 700; letter-spacing: -.02em; direction: ltr; line-height: 1; }
-  .eyebrow {
-    position: relative; display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
-    font-size: 21px; font-weight: 600; color: #3FE0BE;
-    border: 1px solid rgba(63,224,190,.32); border-radius: 999px; padding: 8px 20px; margin-bottom: 26px;
-  }
-  .eyebrow i { width: 10px; height: 10px; border-radius: 50%; background: #3FE0BE; }
   h1 { position: relative; font-size: 64px; line-height: 1.3; font-weight: 800; letter-spacing: -.03em; margin: 0 0 24px; max-width: 26ch; text-wrap: balance; }
-  p { position: relative; font-size: 27px; color: #9BA5C0; margin: 0; max-width: 34ch; line-height: 1.55; }
+  p { position: relative; font-size: 27px; color: #9BA5C0; margin: 0; max-width: 40ch; line-height: 1.55; }
 </style></head><body>
   <div class="waves"><svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMid slice">
     <path d="${wavePath(120)}" stroke="#3FE0BE" opacity=".6"/>
     <path d="${wavePath(168)}" stroke="#8C7CFF" opacity=".55"/>
   </svg></div>
   <div class="lockup">${MARK(58)}<span class="name">Hear With Me</span></div>
-  ${eyebrow ? `<span class="eyebrow"><i></i>${eyebrow}</span>` : ''}
   <h1>${title}</h1>
   <p>${sub}</p>
 </body></html>`;
@@ -100,7 +91,7 @@ function waitForServer(tries = 40) {
   });
 }
 
-// A .ico may simply wrap a PNG — no BMP encoding needed for a 32px icon.
+// A .ico may simply wrap a PNG: no BMP encoding needed for a 32px icon.
 function pngToIco(pngPath, icoPath) {
   const png = fs.readFileSync(pngPath);
   const header = Buffer.alloc(22);
@@ -127,7 +118,8 @@ try {
   const browser = await chromium.launch();
 
   const shoot = async (html, out, width, height, scale = 1) => {
-    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale });
+    // Always the dark scheme: these are brand images, not a page that follows the viewer.
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale, colorScheme: 'dark' });
     await page.setContent(html, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
@@ -137,15 +129,13 @@ try {
   };
 
   await shoot(ogPage({
-    eyebrow: 'زنده',
-    title: 'با هم گوش کنید، هم‌زمان',
-    sub: 'صدا مستقیم بین دو مرورگر رد و بدل می‌شه — بدون اکانت، بدون نصب.',
+    title: 'هرچی می‌شنوی، اونم بشنوه.',
+    sub: 'صدای کامپیوترت رو با یه لینک، زنده برای هرکی خواستی پخش کن. بدون نصب، بدون حساب.',
   }), 'og.png', 1200, 630);
 
   await shoot(ogPage({
-    eyebrow: 'دعوت به یک اتاق زنده',
     title: 'یکی می‌خواد با تو گوش بده',
-    sub: 'لینک رو باز کن تا هم‌زمان همون صدایی رو بشنوی که اون داره گوش می‌ده.',
+    sub: 'لینک رو باز کن تا همون لحظه همون صدایی رو بشنوی که اون داره گوش می‌ده.',
   }), 'og-room.png', 1200, 630);
 
   await shoot(iconPage(180), 'apple-touch-icon.png', 180, 180);

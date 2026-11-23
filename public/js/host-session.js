@@ -316,7 +316,7 @@ export function createHostSession({
   function goLive() {
     prefs.setSharedBefore();
     setStage(ui.hostStage, 'live');
-    ui.hostTitle.textContent = base ? 'زنده — داری پخش می‌کنی' : 'زنده — صدات می‌ره';
+    ui.hostTitle.textContent = base ? 'زنده: داری پخش می‌کنی' : 'زنده: صدات می‌ره';
     ui.hostStatus.textContent = base
       ? 'هرکی لینک رو باز کنه، همین الان می‌شنوه.'
       : 'مهمان‌ها صدات رو می‌شنون. آهنگ رو که انتخاب کنی، با صدات قاطی می‌شه.';
@@ -505,7 +505,7 @@ export function createHostSession({
 
   function submitNowPlaying() {
     api.setNowPlaying(ui.nowPlayingInput.value);
-    ui.nowPlayingBtn.textContent = 'ثبت شد ✔';
+    ui.nowPlayingBtn.textContent = 'ثبت شد';
     setTimeout(() => { ui.nowPlayingBtn.textContent = 'ثبت'; }, 1500);
   }
 

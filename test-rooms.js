@@ -395,6 +395,18 @@ async function testHttpEdges() {
   const encoded = await request('GET', '/%2e%2e/server.js');
   check('encoded path traversal is refused', encoded.status === 404 || encoded.status === 403, encoded.status);
 
+  // One bad URL used to throw out of the request handler and take every room
+  // down with the process.
+  const badEscape = await request('GET', '/%E0%A4%A');
+  check('a malformed URL gets a 400', badEscape.status === 400, badEscape.status);
+  const badRoomPath = await request('GET', '/r/%zz');
+  check('and so does one under /r/', badRoomPath.status === 400 || badRoomPath.status === 404, badRoomPath.status);
+
+  for (const body of [null, 5, [], 'text']) {
+    const res = await request('POST', `/api/rooms/${roomId}/name`, body);
+    check(`a JSON body of ${JSON.stringify(body)} is refused, not crashed on`, res.status === 400, res.status);
+  }
+
   const root = await request('GET', '/');
   check('/ serves the landing page', root.status === 200 && root.text.includes('Hear With Me'), root.status);
 
