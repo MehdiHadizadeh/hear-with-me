@@ -30,6 +30,7 @@ import { createNotices } from './js/notices.js';
 import { createConnectionQuality } from './js/connection-quality.js';
 import { createWakeLock } from './js/wake-lock.js';
 import { createRoster } from './js/roster.js';
+import { createHostAlerts } from './js/host-alerts.js';
 import { createHostSession } from './js/host-session.js';
 import { createGuestSession } from './js/guest-session.js';
 import { setupInvite } from './js/invite.js';
@@ -50,7 +51,8 @@ const events = createRoomEvents(api);
 const rtcConfig = loadRtcConfig();
 
 const notices = createNotices(ui);
-const roster = createRoster({ ui, api, notices });
+const alerts = createHostAlerts();
+const roster = createRoster({ ui, api, notices, alerts });
 const quality = createQualityPolicy(prefs.quality(Object.keys(BITRATES)));
 const wakeLock = createWakeLock();
 
@@ -332,6 +334,10 @@ events.on('reaction', ({ from, kind }) => {
     else notices.showToast('به میزبان گفتیم ✔');
     return;
   }
+  // One notification per guest and kind, so a flurry of hearts is one line.
+  if (isHost) {
+    alerts.notify({ title: `${roster.labelFor(from)} ${reaction.text}`, body: reaction.emoji, tag: `reaction-${from}-${kind}` });
+  }
   if (reaction.cheer) { notices.showBurst(reaction.emoji, layer, isHost ? roster.labelFor(from) : ''); return; }
 
   notices.showToast(reaction.text, {
@@ -399,6 +405,10 @@ events.onError(async () => {
     notices.showError('اتصال به سرور برقرار نشد. صفحه رو دوباره باز کن.');
   }
 });
+
+// The host's first tap is the moment to ask whether the room may tap them on
+// the shoulder; a permission asked without a gesture is silently dropped.
+document.addEventListener('click', () => { if (isHost) alerts.ask(); }, { once: false, capture: true });
 
 document.addEventListener('visibilitychange', () => {
   if (isHost) return;

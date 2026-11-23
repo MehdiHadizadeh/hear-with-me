@@ -2,12 +2,17 @@ package ir.hearwithme.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 
 import androidx.activity.result.ActivityResult;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSObject;
@@ -170,6 +175,67 @@ public class SystemAudioPlugin extends Plugin {
             ContextCompat.startForegroundService(getContext(), intent);
         } else {
             getContext().stopService(intent);
+        }
+        call.resolve();
+    }
+
+    private static final String ALERT_CHANNEL = "room_activity";
+
+    /**
+     * Ask for the notification permission (Android 13+) ahead of time, so the first
+     * guest to arrive while the host is in another app is not lost to a missing grant.
+     */
+    @PluginMethod
+    public void requestAlertPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= 33 && getPermissionState("notifications") != PermissionState.GRANTED) {
+            requestPermissionForAlias("notifications", call, "afterAlertPermission");
+            return;
+        }
+        call.resolve();
+    }
+
+    @PermissionCallback
+    private void afterAlertPermission(PluginCall call) {
+        call.resolve();
+    }
+
+    /**
+     * Room news for a host who is in another app: someone arrived, someone reacted.
+     * Needs { title, body?, tag? }; a newer one with the same tag replaces the older.
+     */
+    @PluginMethod
+    public void notify(PluginCall call) {
+        String title = call.getString("title", "Hear With Me");
+        String body = call.getString("body", "");
+        String tag = call.getString("tag", "room");
+        Context context = getContext();
+
+        if (Build.VERSION.SDK_INT >= 33 && getPermissionState("notifications") != PermissionState.GRANTED) {
+            call.resolve(); // said no, or not asked yet: nothing to do but stay quiet
+            return;
+        }
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= 26 && manager.getNotificationChannel(ALERT_CHANNEL) == null) {
+            NotificationChannel channel = new NotificationChannel(ALERT_CHANNEL, "اتفاق‌های اتاق", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("وقتی کسی میاد تو اتاقت یا واکنش نشون می‌ده");
+            manager.createNotificationChannel(channel);
+        }
+        int immutable = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
+        PendingIntent open = PendingIntent.getActivity(context, 2,
+            new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), immutable);
+        android.app.Notification notification = new NotificationCompat.Builder(context, ALERT_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_wave)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(false)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .build();
+        try {
+            NotificationManagerCompat.from(context).notify(tag, 1, notification);
+        } catch (SecurityException e) {
+            // Permission revoked between the check and now.
         }
         call.resolve();
     }

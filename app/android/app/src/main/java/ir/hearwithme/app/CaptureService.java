@@ -54,7 +54,8 @@ public class CaptureService extends Service {
 
     static volatile Listener listener;
     static volatile boolean running = false;
-    // Paused while nobody listens through the relay: the host's data is not free.
+    // Kept for the page's setUploading call, which no longer decides anything:
+    // the service reads demand from the relay's own answers (see serverDemand).
     static volatile boolean uploading = true;
 
     static final String ACTION_STOP = "ir.hearwithme.app.STOP_CAPTURE";
@@ -75,6 +76,7 @@ public class CaptureService extends Service {
     private static final long SILENT_AFTER_MS = 6000;
     private static final long LEVEL_EVERY_MS = 100;
     private static final int MAX_QUEUED_UPLOADS = 40;     // ~10 s; past that, drop rather than lag
+    private static final long PROBE_EVERY_MS = 2000;      // while nobody listens: just enough to learn when someone does
 
     private MediaProjection projection;
     private AudioRecord record;
@@ -91,6 +93,13 @@ public class CaptureService extends Service {
     private int bitrate;
     private long generation;
     private int seq;
+    // How many guests the server says are listening through the relay, learned
+    // from every upload's answer. The page cannot be trusted with this: once
+    // the host switches to the app they are sharing, the WebView stops getting
+    // the server's "someone is listening" event, and a guest who arrives then
+    // would hear nothing for as long as the host stays away.
+    private volatile int serverDemand = 0;
+    private volatile long lastProbeAt = 0;
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
@@ -274,7 +283,13 @@ public class CaptureService extends Service {
     }
 
     private void upload(byte[] bytes) {
-        if (!uploading) return;
+        if (serverDemand <= 0) {
+            // Nobody is listening as far as we know. Send a batch now and then
+            // anyway: the answer is how a guest arriving later gets found.
+            long now = System.currentTimeMillis();
+            if (now - lastProbeAt < PROBE_EVERY_MS) return;
+            lastProbeAt = now;
+        }
         final long gen = generation;
         final int s = seq++;
         // Uploads overtaking each other are reordered by the server; a backlog
@@ -297,7 +312,13 @@ public class CaptureService extends Service {
                 try (OutputStream body = connection.getOutputStream()) { body.write(bytes); }
                 int status = connection.getResponseCode();
                 InputStream answer = status < 400 ? connection.getInputStream() : connection.getErrorStream();
-                if (answer != null) { while (answer.read() != -1) { /* drain */ } answer.close(); }
+                if (answer != null) {
+                    ByteArrayOutputStream text = new ByteArrayOutputStream();
+                    int b;
+                    while ((b = answer.read()) != -1 && text.size() < 512) text.write(b);
+                    answer.close();
+                    if (status < 400) serverDemand = parseListeners(text.toString("UTF-8"));
+                }
                 if (status == 403 || status == 404) emitState("error", "relay-refused-" + status);
             } catch (Exception e) {
                 // A dropped upload is a short gap for the listeners, nothing more.
@@ -305,6 +326,19 @@ public class CaptureService extends Service {
                 if (connection != null) connection.disconnect();
             }
         });
+    }
+
+    // The relay answers { "ok": true, "listeners": n }; no need for a JSON parser.
+    private static int parseListeners(String json) {
+        int at = json.indexOf("\"listeners\"");
+        if (at < 0) return 0;
+        int i = json.indexOf(':', at);
+        if (i < 0) return 0;
+        i++;
+        while (i < json.length() && json.charAt(i) == ' ') i++;
+        int end = i;
+        while (end < json.length() && Character.isDigit(json.charAt(end))) end++;
+        try { return end > i ? Integer.parseInt(json.substring(i, end)) : 0; } catch (NumberFormatException e) { return 0; }
     }
 
     private void emitState(String state, String detail) {

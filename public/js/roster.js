@@ -5,7 +5,7 @@ import { faDigits, joinedAgo, listenerLabel } from './format.js';
 
 const KICK_CONFIRM_MS = 3000;
 
-export function createRoster({ ui, api, notices }) {
+export function createRoster({ ui, api, notices, alerts }) {
   let members = [];
   let announced = false; // the first roster is not news
   let isHost = false;
@@ -35,6 +35,8 @@ export function createRoster({ ui, api, notices }) {
     for (const m of next) {
       if (m.id !== api.clientId && !before.has(m.id)) {
         notices.showToast('اومد تو اتاق', { who: m.name || 'یک مهمان', emoji: '👋' });
+        // The host is the one who has to know, and may be in another app.
+        if (isHost && alerts) alerts.notify({ title: `${m.name || 'یک مهمان'} اومد تو اتاق`, body: '👋', tag: `join-${m.id}` });
       }
     }
     for (const m of members) {
