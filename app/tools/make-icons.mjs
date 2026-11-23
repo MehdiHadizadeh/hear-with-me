@@ -31,7 +31,7 @@ const shot = async (name, bg, scale, transparent = false) => {
   await p.screenshot({ path: path.join(TMP, name), omitBackground: transparent, clip: { x: 0, y: 0, width: 1024, height: 1024 } });
   await p.close();
 };
-await shot('full.png', '#0B0E18', 0.58);              // launcher, iOS
+await shot('full.png', '#0B0E18', 0.58);              // launcher
 await shot('foreground.png', '', 0.40, true);          // adaptive icon: inside the safe zone
 await shot('splash-mark.png', '', 0.5, true);          // centred on the splash
 await browser.close();

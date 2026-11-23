@@ -205,8 +205,10 @@ const waitLive = (page, ms = 20000) => page.waitForFunction(
     // -- a phone: the first tap, and screen-off by default -----------------
     const phone = await open(`${BASE}/r/${roomId}`, { mobile: true });
     await phone.waitForSelector('#listenGate', { state: 'visible', timeout: 10000 });
-    const relayDefault = await phone.getAttribute('#modeRelay', 'aria-checked');
-    check(relayDefault === 'true', 'a phone is offered the screen-off path by default');
+    const relayDefault = await phone.isChecked('#modeRelay');
+    check(relayDefault, 'a phone is set to the screen-off path by default');
+    check(await phone.isVisible('#listenBtn') && !(await phone.isVisible('#modeRelay')),
+      'and the first tap is one button, with the choice left in the settings');
     await phone.click('#listenBtn');
     check(await waitLive(phone), 'one tap and the phone is live');
     const pp = await probe(phone);

@@ -221,7 +221,16 @@ public class CaptureService extends Service {
 
         while (!stopping) {
             int read = record.read(pcm, 0, pcm.length);
-            if (read <= 0) continue;
+            if (read < 0) {
+                // The recorder died (ERROR_DEAD_OBJECT and friends). Looping on
+                // it would spin a core until the battery is flat; end the share
+                // and say so. Shutting down joins this thread, so it is asked
+                // for from the main one.
+                emitState("error", "read-" + read);
+                new Handler(Looper.getMainLooper()).post(() -> shutDown("read-error"));
+                return;
+            }
+            if (read == 0) continue;
 
             // The level, read from the real samples: the page draws its meter
             // from this and decides "no sound" from it.

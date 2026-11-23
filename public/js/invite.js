@@ -44,7 +44,7 @@ export function setupInvite({ ui, roomId, notices }) {
     }
     navigator.clipboard.writeText(inviteUrl()).then(() => {
       const original = ui.shareBtn.textContent;
-      ui.shareBtn.textContent = 'لینک کپی شد ✔';
+      ui.shareBtn.textContent = 'لینک کپی شد';
       setTimeout(() => { ui.shareBtn.textContent = original; }, CONFIRM_MS);
     }, copyFailed);
   });

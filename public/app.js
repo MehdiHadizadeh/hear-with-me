@@ -12,7 +12,7 @@
 //   host-session / guest-session      the two halves of a room
 //   relay-encoder / relay-player      the screen-off path, from each side
 //   roster / notices / invite         people, messages, and getting the link out
-//   end-card / car-mode / metrics     what a guest keeps, a dashboard view, and what we count
+//   end-card / metrics                what a guest keeps, and what we count
 
 import { REACTIONS } from './shared/reactions.js';
 import { show, ui } from './js/dom.js';
@@ -35,7 +35,6 @@ import { createHostSession } from './js/host-session.js';
 import { createGuestSession } from './js/guest-session.js';
 import { setupInvite } from './js/invite.js';
 import { createEndCard } from './js/end-card.js';
-import { createCarMode } from './js/car-mode.js';
 import { report } from './js/metrics.js';
 
 const REACTION_COOLDOWN_MS = 1000; // the server refuses anything faster anyway
@@ -87,7 +86,6 @@ const guest = createGuestSession({
 
 setupInvite({ ui, roomId, notices });
 const endCard = createEndCard({ ui, notices });
-const carMode = createCarMode({ ui, guest });
 
 let isHost = false;
 let sharingNow = false;
@@ -120,7 +118,6 @@ function updateHostName(members) {
   const hostMember = (members || []).find((m) => m.isHost);
   hostName = (hostMember && hostMember.name) || '';
   guest.setHostName(hostName);
-  carMode.setTitle(hostName ? `${hostName} داره پخش می‌کنه` : 'در حال پخش');
 }
 
 // ---------------------------------------------------------------------------
@@ -331,7 +328,7 @@ events.on('reaction', ({ from, kind }) => {
   if (from === identity.clientId) {
     // Your own reaction only has to confirm it left.
     if (reaction.cheer) notices.showBurst(reaction.emoji, layer);
-    else notices.showToast('به میزبان گفتیم ✔');
+    else notices.showToast('به میزبان گفتیم');
     return;
   }
   // One notification per guest and kind, so a flurry of hearts is one line.
@@ -386,7 +383,7 @@ events.onError(async () => {
   ui.connectionPill.classList.remove('live');
 
   if (!events.gaveUp) {
-    ui.connectionText.textContent = 'قطع شد — در حال اتصال مجدد...';
+    ui.connectionText.textContent = 'قطع شد. در حال اتصال دوباره...';
     return;
   }
 
@@ -415,10 +412,6 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { guest.handleHidden(); return; }
   if (sharingNow) guest.handleVisible();
 });
-
-// Car mode mirrors the guest's stage, whatever changed it.
-new MutationObserver(() => carMode.setState(ui.guestStage.dataset.state))
-  .observe(ui.guestStage, { attributes: true, attributeFilter: ['data-state'] });
 
 // ---------------------------------------------------------------------------
 // The mark breathes with the sound

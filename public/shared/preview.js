@@ -11,7 +11,7 @@ export function roomPreview(info) {
   const who = name || 'یکی';
   if (!info) {
     return {
-      title: 'Hear With Me — هرچی می‌شنوی، اونم بشنوه',
+      title: 'Hear With Me | هرچی می‌شنوی، اونم بشنوه',
       description: 'لینک رو باز کن تا همون لحظه همون صدا رو بشنوی. بدون نصب، بدون حساب.',
     };
   }

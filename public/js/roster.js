@@ -34,14 +34,14 @@ export function createRoster({ ui, api, notices, alerts }) {
 
     for (const m of next) {
       if (m.id !== api.clientId && !before.has(m.id)) {
-        notices.showToast('اومد تو اتاق', { who: m.name || 'یک مهمان', emoji: '👋' });
+        notices.showToast('اومد تو اتاق', { who: m.name || 'یک مهمان' });
         // The host is the one who has to know, and may be in another app.
-        if (isHost && alerts) alerts.notify({ title: `${m.name || 'یک مهمان'} اومد تو اتاق`, body: '👋', tag: `join-${m.id}` });
+        if (isHost && alerts) alerts.notify({ title: `${m.name || 'یک مهمان'} اومد تو اتاق`, body: '', tag: `join-${m.id}` });
       }
     }
     for (const m of members) {
       if (m.id !== api.clientId && !after.has(m.id) && !m.isHost) {
-        notices.showToast('از اتاق رفت', { who: m.name || 'یک مهمان', emoji: '👋' });
+        notices.showToast('از اتاق رفت', { who: m.name || 'یک مهمان' });
       }
     }
   }

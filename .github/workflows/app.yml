@@ -1,8 +1,7 @@
 name: Tests and app builds
 
-# One pipeline for all three outputs: the site's tests, the Android app (an
-# installable APK) and the iPhone app (an unsigned build). A version tag
-# (v1.2.3) also publishes them as a GitHub release.
+# One pipeline: the site's tests and the Android app (an installable APK). A
+# version tag (v1.2.3) also publishes the APK as a GitHub release.
 on:
   push:
     branches: [main, 'feature/**']
@@ -94,68 +93,10 @@ jobs:
           path: app/dist/*.apk
           if-no-files-found: error
 
-  ios:
-    name: iPhone app
-    needs: test
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: app
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-      - run: npm ci
-      # Files are named after the version people know: a release's after its
-      # tag (HearWithMe-0.6.1.apk), anything else after the version it is
-      # heading for plus its build (HearWithMe-0.6.1-dev21.apk), so a test
-      # build is never mistaken for a release. The build number still lives
-      # inside the Android app, which needs it to accept an update.
-      - name: Name the files after the version
-        run: |
-          if [ "$GITHUB_REF_TYPE" = tag ]; then
-            echo "BUILD_NAME=HearWithMe-${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-          else
-            echo "BUILD_NAME=HearWithMe-$(node -p "require('./package.json').version")-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
-          fi
-      - name: Point the app at this build's server
-        run: node tools/point-at-server.mjs
-      - run: npx cap sync ios
-      # Without an Apple developer account there is nothing to sign with, so
-      # this is an unsigned build: re-signed and installed with a tool like
-      # Sideloadly or AltStore using a free Apple ID. Signing for the App
-      # Store or TestFlight needs a paid account and is not set up here.
-      - name: Build for devices (unsigned)
-        working-directory: app/ios/App
-        run: |
-          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
-            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
-          mkdir -p Payload ../../dist
-          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
-          zip -qry "../../dist/${BUILD_NAME}-unsigned.ipa" Payload
-      - name: Build for the simulator
-        working-directory: app/ios/App
-        run: |
-          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build-sim \
-            CODE_SIGNING_ALLOWED=NO build
-          cd build-sim/Build/Products/Debug-iphonesimulator
-          zip -qry "$GITHUB_WORKSPACE/app/dist/${BUILD_NAME}-simulator.zip" App.app
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ios-builds
-          path: app/dist/*
-          if-no-files-found: error
-
   release:
     name: Publish a release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [android, ios]
+    needs: android
     runs-on: ubuntu-latest
     permissions:
       contents: write

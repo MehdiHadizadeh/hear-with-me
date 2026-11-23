@@ -24,12 +24,18 @@ public class ListenService extends Service {
     private static final String CHANNEL = "listening";
     private static final int NOTIFICATION_ID = 7002;
 
+    // Lets the plugin start this only once: asking again from the background
+    // is refused by Android 12+, and an app that crashes on that has stopped
+    // the very listen it was keeping alive.
+    static volatile boolean running = false;
+
     @Override
     public IBinder onBind(Intent intent) { return null; }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String title = intent != null ? intent.getStringExtra(EXTRA_TITLE) : null;
+        running = true;
         Notification notification = build(title != null ? title : "Hear With Me");
         if (Build.VERSION.SDK_INT >= 29) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -41,6 +47,7 @@ public class ListenService extends Service {
 
     @Override
     public void onDestroy() {
+        running = false;
         if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE); else stopForeground(true);
         super.onDestroy();
     }

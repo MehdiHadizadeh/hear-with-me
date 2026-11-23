@@ -131,8 +131,11 @@ export function createGuestSession({
 
   function renderPath() {
     const relayNow = pathNow() === 'relay';
-    ui.pathChip.textContent = relayNow ? 'از راه سرور · صفحه‌خاموش' : 'مستقیم · هم‌زمان';
+    ui.pathChip.textContent = relayNow ? 'صفحه‌خاموش' : 'هم‌زمان';
     ui.pathChip.dataset.path = relayNow ? 'relay' : 'direct';
+    ui.gateHint.textContent = relayNow
+      ? 'با یه لمس شروع می‌شه. با قفل شدن گوشی هم قطع نمی‌شه.'
+      : 'با یه لمس شروع می‌شه. صفحه باید روشن بمونه.';
     // The one sentence about privacy that is true for the path in use.
     ui.footerNote.textContent = relayNow
       ? 'همین صدا، همین لحظه. صدا از سرور ما رد می‌شه و هیچ‌جا ذخیره نمی‌شه.'
@@ -153,8 +156,9 @@ export function createGuestSession({
     ui.modeRelay.disabled = !relayOk;
     // A relay-only host leaves nothing to choose.
     ui.modeDirect.disabled = !directAvailable;
-    ui.modeRelay.setAttribute('aria-checked', String(mode === 'relay' && relayOk));
-    ui.modeDirect.setAttribute('aria-checked', String(mode !== 'relay' || !relayOk));
+    ui.modeRelay.checked = mode === 'relay' && relayOk;
+    ui.modeDirect.checked = mode !== 'relay' || !relayOk;
+    show(ui.modeChoice, relayOk && directAvailable);
   }
 
   // -- shared life cycle ------------------------------------------------------
@@ -164,7 +168,7 @@ export function createGuestSession({
     clearTimeout(fallbackTimer);
     attempts = 0;
     setStage(ui.guestStage, 'live');
-    ui.guestStatusTitle.textContent = 'زنده — در حال شنیدن';
+    ui.guestStatusTitle.textContent = 'زنده';
     ui.guestStatusSub.textContent = path === 'relay'
       ? 'می‌تونی گوشی رو قفل کنی؛ پخش ادامه پیدا می‌کنه.'
       : 'همون چیزی که میزبان الان می‌شنوه.';
@@ -377,8 +381,29 @@ export function createGuestSession({
     renderModeChoice();
   }
 
-  ui.modeRelay.addEventListener('click', () => choose('relay'));
-  ui.modeDirect.addEventListener('click', () => choose('direct'));
+  // Choosing before the first tap only picks the path; choosing mid-listen
+  // moves the sound over without a second tap.
+  function switchPath(next) {
+    if (next === 'relay' && !relayUsable()) {
+      renderModeChoice();
+      notices.showInfo(relayAllowed
+        ? 'این مرورگر جریان صفحه‌خاموش این اتاق رو پخش نمی‌کنه.'
+        : 'میزبان این اتاق رو روی «فقط مستقیم» گذاشته.');
+      return;
+    }
+    choose(next);
+    renderPath();
+    if (!wantListening || !armed) return;
+    if (pc) { pc.close(); pc = null; }
+    relay.stop();
+    meter.stop();
+    stats.stop();
+    attempts = 0;
+    connect();
+  }
+
+  ui.modeRelay.addEventListener('change', () => { if (ui.modeRelay.checked) switchPath('relay'); });
+  ui.modeDirect.addEventListener('change', () => { if (ui.modeDirect.checked) switchPath('direct'); });
 
   ui.listenBtn.addEventListener('click', () => {
     armed = true;
@@ -394,28 +419,6 @@ export function createGuestSession({
       ui.guestStatusTitle.textContent = 'آماده‌ای';
       ui.guestStatusSub.textContent = 'وقتی پخش شروع بشه، خودکار می‌شنوی.';
     }
-  });
-
-  // Switching paths mid-listen: the chip is also the switch.
-  ui.pathChip.addEventListener('click', () => {
-    if (!directAvailable) {
-      notices.showInfo('میزبان از گوشی پخش می‌کنه؛ این پخش فقط از راه سرور می‌رسه.');
-      return;
-    }
-    const next = pathNow() === 'relay' ? 'direct' : 'relay';
-    if (next === 'relay' && !relayUsable()) {
-      notices.showInfo(relayAllowed
-        ? 'این مرورگر جریان صفحه‌خاموش این اتاق رو پخش نمی‌کنه.'
-        : 'میزبان این اتاق رو روی «فقط مستقیم» گذاشته.');
-      return;
-    }
-    choose(next);
-    if (pc) { pc.close(); pc = null; }
-    relay.stop();
-    meter.stop();
-    stats.stop();
-    attempts = 0;
-    connect();
   });
 
   // -- what the guest hears about ---------------------------------------------
@@ -499,10 +502,8 @@ export function createGuestSession({
   // appearance can never drift apart.
   function setMuted(muted) {
     ui.remoteAudio.muted = muted;
-    for (const btn of [ui.muteBtn, ui.carPlayBtn]) {
-      btn.setAttribute('aria-pressed', String(muted));
-      btn.setAttribute('aria-label', muted ? 'وصل کردن صدا' : 'بی‌صدا کردن');
-    }
+    ui.muteBtn.setAttribute('aria-pressed', String(muted));
+    ui.muteBtn.setAttribute('aria-label', muted ? 'وصل کردن صدا' : 'بی‌صدا کردن');
   }
 
   ui.muteBtn.addEventListener('click', () => {

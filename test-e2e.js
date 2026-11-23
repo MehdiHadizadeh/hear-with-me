@@ -116,7 +116,7 @@ function waitForServer(url, isGone, tries = 30) {
       });
 
       if (live && hasTrack) {
-        console.log(`PASS: ${label} reached "زنده — در حال شنیدن" with a live audio track`);
+        console.log(`PASS: ${label} reached "زنده" with a live audio track`);
       } else {
         console.log(`FAIL: ${label} did not get audio. live=${live} track=${hasTrack} status=${await page.textContent('#guestStatusTitle')}`);
         process.exitCode = 1;
