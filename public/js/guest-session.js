@@ -441,7 +441,7 @@ export function createGuestSession({
       title.textContent = text;
       ui.guestNowPlaying.append(note, hidden, title);
     }
-    show(ui.guestNowPlaying, !!text);
+    show(ui.guestNowPlaying, !!text, 'flex');
     publishMediaSession(text);
   }
 
