@@ -6,9 +6,8 @@
    landing wave, the level meter and the mark, and nowhere else. Everything
    else is flat: one ground, one panel colour, hairlines, no shadows.
 
-   Dark is the default because this is listened to in the evening, on a
-   phone, in a dark room or a car. A light scheme follows the system
-   setting for daytime. Both come from the same tokens below.
+   Dark only, on purpose: this is listened to in the evening, on a phone, in a
+   dark room or a car, and one look is easier to keep right than two.
 
    Dials: ENERGY 1 / RHYTHM 2 / MOTION 1. The only thing that moves on its
    own is the landing wave and the live meter; both are the product.
@@ -26,7 +25,9 @@
 }
 
 :root {
-  color-scheme: dark light;
+  /* Native controls (checkboxes, the select popup, the scrollbar) are painted
+     by the browser, and without this they come out light on a dark page. */
+  color-scheme: dark;
 
   /* ground */
   --bg: #070910;
@@ -68,37 +69,6 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #F6F7FB;
-    --panel: #FFFFFF;
-    --panel-2: #EEF0F7;
-    --panel-3: #E3E6F1;
-    --field: #FFFFFF;
-    --line: #CDD3E4;
-    --line-strong: #98A1BE;
-    --line-soft: #E1E5F0;
-
-    --text: #12151F;
-    --muted: #444D69;   /* 8.0:1 on white */
-    --faint: #5A6483;   /* 5.9:1 on white, 5.4:1 on --bg */
-
-    --signal: #0A7A66;       /* 5.4:1 on white */
-    --signal-fill: #16B696;
-    --on-signal: #03130E;    /* 8.4:1 on --signal-fill */
-    --violet: #5B4BDB;
-    --wave-alpha: .42;
-
-    --st-live: #0A7A66;
-    --st-wait: #9A5F00;
-    --st-idle: #5A6483;
-    --st-alert: #C0283A;
-    --alert-text: #9E1B2B;
-    --on-alert: #FFFFFF;
-
-    --scrim: rgba(246, 247, 251, .88);
-  }
-}
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -798,7 +768,7 @@ input[type="text"].code-input::placeholder { letter-spacing: 0; text-transform: 
 .qr-code {
   width: min(232px, 62vw);
   margin: 0 auto 12px;
-  /* The code's own light colour in both schemes: the quiet zone is part of the
+  /* The code's own light colour: the quiet zone is part of the
      symbol, and a dark frame reads to a scanner as more code. */
   background: var(--qr-bg);
   border-radius: var(--r-control);

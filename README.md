@@ -36,10 +36,6 @@ nothing behind when it closes.
 </tr>
 </table>
 
-The pages follow the system's light or dark setting. Dark is the default look.
-
-<img src="docs/guest-light.png" width="260" alt="The guest's page in the light scheme" />
-
 ## Two paths for one sound
 
 | | Direct | Screen-off |
